@@ -8,7 +8,11 @@ if (!canvas) {
     throw new Error('Game canvas not found');
 }
 
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d')!; // temporaray !; to avoid error
+
+if (!ctx) {
+    throw new Error('2D rendering context not available');
+}
 
 const GAME_WIDTH = 600;
 const GAME_HEIGHT = 400;
@@ -21,34 +25,39 @@ const obstacle = {
     height: 55,
 };
 
-const scale = 0.75;
 
+// Note: write specific sprite specs when generating
+// Image + frame width and height (consistent ratio) + consistent padding + transparent background + strip or matrix
+// source image
+const CAT_FRAME_WIDTH = 270;
+const CAT_FRAME_HEIGHT = 270;
+const CAT_FRAME_COUNT = 8;
+const CAT_BOTTOM_PADDING = 8;
+
+// render image
 const cat = {
     x: 100,
-    width: 73 * scale,
-    height: 56 * scale, // TODO: MXN_ mind sprite ratio
+    width: 60,
+    height: 60,
 };
 
-const catImage = new Image();
+const catSpriteSheet = new Image();
 
 let catImageLoaded = false;
 
-catImage.onload = () => {
+catSpriteSheet.onload = () => {
     catImageLoaded = true;
 };
 
-catImage.src = '/sprites/cat-idle.png';
+let currentCatFrame = 1;
 
-if (!ctx) {
-    throw new Error('2D rendering context not available');
-}
+catSpriteSheet.src = '/sprites/cat-run.png';
 
-let playerX = 0;
 let previousTime: number | undefined;
-
 
 // logic, update values
 function update(_deltaTime: number) {
+    // Blank for now
 }
 
 function drawBackground() {
@@ -90,15 +99,64 @@ function drawForeground() {
     );
 }
 
+function drawCatFrame(frame: number) {
+    const sourceX =
+        frame * CAT_FRAME_WIDTH;
+
+    const sourceY = 0;
+
+    const y =
+        GROUND_Y - cat.height + CAT_BOTTOM_PADDING;
+
+    ctx.drawImage(
+        catSpriteSheet,
+
+        sourceX,
+        sourceY,
+        CAT_FRAME_WIDTH,
+        CAT_FRAME_HEIGHT,
+
+        cat.x,
+        y,
+        cat.width,
+        cat.height
+    );
+}
+
+// temporary -> <- for debuyg
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight') {
+        currentCatFrame =
+            (currentCatFrame + 1) % CAT_FRAME_COUNT;
+    }
+
+    if (event.key === 'ArrowLeft') {
+        currentCatFrame =
+            (currentCatFrame - 1 + CAT_FRAME_COUNT) %
+            CAT_FRAME_COUNT;
+    }
+});
+
+
+function setCatFrame(frame: number) {
+    if (frame < 0 || frame >= CAT_FRAME_COUNT) {
+        return;
+    }
+
+    currentCatFrame = frame;
+}
+
+setCatFrame(0)
+
 function drawCat() {
-    const catY = GROUND_Y - cat.height;
+    const y = GROUND_Y - cat.height;
 
     if (!catImageLoaded) {
         ctx.strokeStyle = '#171717';
 
         ctx.strokeRect(
             cat.x,
-            catY,
+            y,
             cat.width,
             cat.height
         );
@@ -106,10 +164,13 @@ function drawCat() {
         return;
     }
 
-    ctx.drawImage(
-        catImage,
+    drawCatFrame(currentCatFrame)
+
+    ctx.strokeStyle = 'red';
+
+    ctx.strokeRect(
         cat.x,
-        catY,
+        y,
         cat.width,
         cat.height
     );
