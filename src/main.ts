@@ -9,7 +9,8 @@ type GameAction =
 
 type PlayerState =
     | 'idle'
-    | 'jumping';
+    | 'jumping'
+    | 'falling';
 
 // Note: write specific sprite specs when generating
 // Image + frame width and height (consistent ratio) + consistent padding + transparent background + strip or matrix
@@ -23,6 +24,8 @@ const GAME_WIDTH = 600;
 const GAME_HEIGHT = 400;
 const GROUND_Y = 320;
 
+
+
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
 if (!canvas) {
     throw new Error('Game canvas not found');
@@ -33,7 +36,6 @@ if (!ctx) {
     throw new Error('2D rendering context not available');
 }
 
-// render image
 const player = {
     x: 100,
     y: GROUND_Y - 60 + CAT_BOTTOM_PADDING,
@@ -41,9 +43,14 @@ const player = {
     height: 60,
 
     frame: 0,
-
     state: 'idle' as PlayerState,
+
+    velocityY: 0,
+    isGrounded: true,
 };
+const GRAVITY = 1400;
+const JUMP_VELOCITY = -520;
+const PLAYER_GROUND_Y = GROUND_Y - player.height + CAT_BOTTOM_PADDING;
 
 const obstacle = {
     x: 430,
@@ -111,14 +118,38 @@ function setCatFrame(frame: number) {
     player.frame = frame;
 }
 
-function updatePlayer(_deltaTime: number) {
-    console.log("state: " + player.state);   
-    player.state = 'idle'; // TODO: make enum?
+function updatePlayer(deltaTime: number) {
+    // TODO: uncomment for debugging
+    // console.log({
+    //     y: player.y,
+    //     velocityY: player.velocityY,
+    //     grounded: player.isGrounded,
+    //     state: player.state,
+    // });
 
-    if (input.jumpPressed) {
-        player.state = 'jumping';
-
+    if (input.jumpPressed && player.isGrounded) {
+        player.velocityY = JUMP_VELOCITY;
+        player.isGrounded = false;
         console.log('Player jump action received');
+    }
+
+    player.velocityY += GRAVITY * deltaTime; // change of velocity because of acceleration (gravity x time)
+    player.y += player.velocityY * deltaTime; // change of position because of velocity (velocity x time)
+
+    // Stop at landing
+    if (player.y >= PLAYER_GROUND_Y) {
+        player.y = PLAYER_GROUND_Y;
+        player.velocityY = 0;
+        player.isGrounded = true;
+    }
+
+    // update states
+    if (player.isGrounded) {
+        player.state = 'idle';
+    } else if (player.velocityY < 0) {
+        player.state = 'jumping';
+    } else {
+        player.state = 'falling';
     }
 }
 
@@ -222,12 +253,16 @@ function render() {
     drawForeground(); // foreground
 }
 
+const MAX_DELTA_TIME = 0.05;
 function gameLoop(currentTime: number) {
     if (previousTime === undefined) {
         previousTime = currentTime;
     }
 
-    const deltaTime = (currentTime - previousTime) / 1000;
+    const rawDeltaTime = (currentTime - previousTime) / 1000;
+    const deltaTime =
+        Math.min(rawDeltaTime, MAX_DELTA_TIME);
+
     previousTime = currentTime;
 
     update(deltaTime);
