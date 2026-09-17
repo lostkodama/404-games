@@ -40,13 +40,14 @@ const MAX_DELTA_TIME = 0.05;
 const WORLD_SPEED = 200; // 200 game pixels / second
 const OBSTACLE_RESET_GAP = 150;
 
+let collisionDetected = false;
 
-const canvas = document.querySelector<HTMLCanvasElement>('#game');
+const canvas = document.querySelector<HTMLCanvasElement>('#game')!; // temporary !; to avoid warning
 if (!canvas) {
     throw new Error('Game canvas not found');
 }
 
-const ctx = canvas.getContext('2d')!; // temporaray !; to avoid error
+const ctx = canvas.getContext('2d')!; // temporary !; to avoid warning
 if (!ctx) {
     throw new Error('2D rendering context not available');
 }
@@ -69,6 +70,23 @@ const player = {
 };
 
 const PLAYER_GROUND_Y = GROUND_Y - player.height + CAT_BOTTOM_PADDING;
+
+const PLAYER_HITBOXES = {
+    grounded: {
+        offsetX: 8,
+        offsetY: player.height - 73 - CAT_BOTTOM_PADDING,
+        width: 91,
+        height: 73,
+    },
+
+      airborne: {
+        offsetX: 10 ,
+        offsetY: player.height - 80   - CAT_BOTTOM_PADDING,
+        width: 89,
+        height: 35,
+    },
+};
+
 const obstacle = {
     x: 500,
     y: GROUND_Y - 55,
@@ -163,13 +181,61 @@ function updatePlayer(deltaTime: number) {
     }
 
     // update states
-    // if (player.isGrounded) {
-    //     player.state = 'idle';
-    // } else if (player.velocityY < 0) {
-    //     player.state = 'jumping';
-    // } else {
-    //     player.state = 'falling';
-    // }
+    if (player.isGrounded) {
+        player.state = 'idle';
+    } else if (player.velocityY < 0) {
+        player.state = 'jumping';
+    } else {
+        player.state = 'falling';
+    }
+}
+
+function getPlayerBounds(): Rect {
+    const hitbox = player.isGrounded
+        ? PLAYER_HITBOXES.grounded
+        : PLAYER_HITBOXES.airborne;
+
+    return {
+        x: player.x + hitbox.offsetX,
+        y: player.y + hitbox.offsetY,
+        width: hitbox.width,
+        height: hitbox.height,
+    };
+}
+
+function getObstacleBounds() {
+    return {
+        x: obstacle.x,
+        y: obstacle.y,
+        width: obstacle.width,
+        height: obstacle.height,
+    };
+}
+
+type Rect = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+function rectanglesOverlap(
+    a: Rect,
+    b: Rect
+) {
+    return (
+        a.x + a.width > b.x &&
+        a.x < b.x + b.width &&
+        a.y + a.height > b.y &&
+        a.y < b.y + b.height
+    );
+}
+
+function updateCollision() {
+    collisionDetected = rectanglesOverlap(
+        getPlayerBounds(),
+        getObstacleBounds()
+    );
 }
 
 function updatePlayerAnimation(
@@ -263,6 +329,7 @@ function drawGroundMarker() {
     ctx.stroke();
 }
 
+// for understanding the visual
 function updateGroundMarker(
     deltaTime: number
 ) {
@@ -342,7 +409,35 @@ function render() {
     drawObstacle(); // game objects
     drawPlayer();
 
-    //drawForeground(); // foreground
+    drawDebugBounds();
+
+    drawForeground(); // foreground
+}
+
+function drawDebugBounds() {
+    const playerBounds =
+        getPlayerBounds();
+
+    const obstacleBounds =
+        getObstacleBounds();
+
+    ctx.strokeStyle = 'red';
+
+    ctx.strokeRect(
+        playerBounds.x,
+        playerBounds.y,
+        playerBounds.width,
+        playerBounds.height
+    );
+
+    ctx.strokeStyle = 'blue';
+
+    ctx.strokeRect(
+        obstacleBounds.x,
+        obstacleBounds.y,
+        obstacleBounds.width,
+        obstacleBounds.height
+    );
 }
 
 
@@ -352,6 +447,16 @@ function update(deltaTime: number) {
     updatePlayerAnimation(deltaTime);
 
     updateObstacle(deltaTime);
+
+    updateGroundMarker(deltaTime)
+
+    updateCollision()
+
+    // Mind the order. Should be after updating player and obstacle position.
+    if (collisionDetected) {
+        console.log('Collision!');
+    }
+
     resetInput();
 }
 
