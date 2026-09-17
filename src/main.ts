@@ -37,6 +37,8 @@ const JUMP_VELOCITY = -520;
 
 const MAX_DELTA_TIME = 0.05;
 
+const WORLD_SPEED = 200; // 200 game pixels / second
+const OBSTACLE_RESET_GAP = 150;
 
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
@@ -51,7 +53,7 @@ if (!ctx) {
 
 const player = {
     x: 100,
-    y: GROUND_Y - 60 + CAT_BOTTOM_PADDING,
+    y: GROUND_Y - (271.5 * PLAYER_SCALE) + CAT_BOTTOM_PADDING,
     width: 271.5 * PLAYER_SCALE,
     height: 311 * PLAYER_SCALE,
 
@@ -65,28 +67,32 @@ const player = {
 
     state: 'idle' as PlayerState,
 };
-const PLAYER_GROUND_Y = GROUND_Y - player.height + CAT_BOTTOM_PADDING;
 
+const PLAYER_GROUND_Y = GROUND_Y - player.height + CAT_BOTTOM_PADDING;
 const obstacle = {
-    x: 430,
+    x: 500,
+    y: GROUND_Y - 55,
+
     width: 40,
     height: 55,
 };
+
+const groundMarker = {
+    x: 300,
+    width: 40,
+};
+
+const catSpriteSheet = new Image();
+let catSpriteLoaded = false;
+catSpriteSheet.onload = () => {
+    catSpriteLoaded = true;
+};
+catSpriteSheet.src = '/sprites/cat-run-jump.png';
 
 // input state
 const input = {
     jumpPressed: false,
 };
-
-const catSpriteSheet = new Image();
-
-let catSpriteLoaded = false;
-
-catSpriteSheet.onload = () => {
-    catSpriteLoaded = true;
-};
-
-catSpriteSheet.src = '/sprites/cat-run-jump.png';
 
 function triggerAction(action: GameAction) {
     switch (action) {
@@ -109,7 +115,7 @@ function handleKeyDown(event: KeyboardEvent) {
         event.code === 'Space' ||
         event.code === 'ArrowUp'
     ) {
-        event.preventDefault();
+        event.preventDefault(); // Prevents default behaviour such as scroll down
 
         triggerAction('jump');
     }
@@ -171,17 +177,16 @@ function updatePlayerAnimation(
 ) {
     if (!player.isGrounded) {
         if (player.velocityY < 0) {
-            player.frame = JUMP_FRAME; // Question, understand
+            player.frame = JUMP_FRAME; // Less than 0 is UP
         } else {
-            player.frame = FALL_FRAME;
+            player.frame = FALL_FRAME; // More than 0 is DOWN
         }
 
         return;
     }
 
-    player.animationTime += deltaTime;
+    player.animationTime += deltaTime; // elapsed time per frame
 
-    // Question: Understand why this improves timer?
     while (
         player.animationTime >=
         RUN_FRAME_DURATION
@@ -195,27 +200,38 @@ function updatePlayerAnimation(
             ) % RUN_FRAMES.length;
     }
 
-
-    // if (player.animationTime >= RUN_FRAME_DURATION) {
-    //     // player.animationTime = 0;
-    //     player.animationTime -= RUN_FRAME_DURATION; // Question: Understand why this improves timer?
-    //     player.animationFrameIndex = (player.animationFrameIndex + 1) % RUN_FRAMES.length;
-    // }
-
     player.frame = RUN_FRAMES[player.animationFrameIndex];
-}
-
-// logic, update values
-function update(deltaTime: number) {
-    updatePlayer(deltaTime);
-    updatePlayerAnimation(deltaTime);
-
-    resetInput();
 }
 
 function drawBackground() {
     ctx.fillStyle = '#f7f7f7';
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+}
+
+function drawObstacle() {
+    ctx.fillStyle = '#555';
+
+    ctx.fillRect(
+        obstacle.x,
+        obstacle.y,
+        obstacle.width,
+        obstacle.height
+    );
+}
+
+function updateObstacle(
+    deltaTime: number
+) {
+    obstacle.x -=
+        WORLD_SPEED * deltaTime;
+
+    if (obstacle.x + obstacle.width < 0) { // If obstacle is off screen
+        resetObstacle()
+    }
+}
+
+function resetObstacle() {
+    obstacle.x = GAME_WIDTH + OBSTACLE_RESET_GAP;
 }
 
 function drawGround() {
@@ -228,17 +244,68 @@ function drawGround() {
     ctx.stroke();
 }
 
-function drawObstacle() {
-    const obstacleY = GROUND_Y - obstacle.height;
+function drawGroundMarker() {
+    ctx.strokeStyle = '#aaa';
 
-    ctx.fillStyle = '#555';
+    ctx.beginPath();
+
+    ctx.moveTo(
+        groundMarker.x,
+        GROUND_Y + 10
+    );
+
+    ctx.lineTo(
+        groundMarker.x +
+        groundMarker.width,
+        GROUND_Y + 10
+    );
+
+    ctx.stroke();
+}
+
+function updateGroundMarker(
+    deltaTime: number
+) {
+    groundMarker.x -=
+        WORLD_SPEED * deltaTime;
+
+    if (
+        groundMarker.x +
+        groundMarker.width <
+        0
+    ) {
+        groundMarker.x =
+            GAME_WIDTH;
+    }
+}
+
+function drawForeground() {
+    ctx.fillStyle = '#d4d4d4';
 
     ctx.fillRect(
-        obstacle.x,
-        obstacleY,
-        obstacle.width,
-        obstacle.height
+        0,
+        GROUND_Y + 20,
+        GAME_WIDTH,
+        GAME_HEIGHT - GROUND_Y - 20
     );
+}
+
+function drawPlayer() {
+    // Rectangle
+    if (!catSpriteLoaded) {
+        ctx.strokeStyle = '#171717';
+
+        ctx.strokeRect(
+            player.x,
+            PLAYER_GROUND_Y,
+            player.width,
+            player.height
+        );
+
+        return;
+    }
+
+    drawPlayerFrame(player.frame)
 }
 
 function drawPlayerFrame(frame: number) {
@@ -262,35 +329,6 @@ function drawPlayerFrame(frame: number) {
     );
 }
 
-function drawPlayer() {
-    const y = GROUND_Y - player.height;
-
-    if (!catSpriteLoaded) {
-        ctx.strokeStyle = '#171717';
-
-        ctx.strokeRect(
-            player.x,
-            y,
-            player.width,
-            player.height
-        );
-
-        return;
-    }
-
-    drawPlayerFrame(player.frame)
-}
-
-function drawForeground() {
-    ctx.fillStyle = '#d4d4d4';
-
-    ctx.fillRect(
-        0,
-        GROUND_Y + 20,
-        GAME_WIDTH,
-        GAME_HEIGHT - GROUND_Y - 20
-    );
-}
 
 // drawing
 function render() {
@@ -299,29 +337,40 @@ function render() {
     drawBackground(); // background
 
     drawGround(); // world
+    drawGroundMarker();
 
     drawObstacle(); // game objects
     drawPlayer();
 
-    drawForeground(); // foreground
+    //drawForeground(); // foreground
+}
+
+
+// logic, update values
+function update(deltaTime: number) {
+    updatePlayer(deltaTime);
+    updatePlayerAnimation(deltaTime);
+
+    updateObstacle(deltaTime);
+    resetInput();
 }
 
 let previousTime: number | undefined;
+
 function gameLoop(currentTime: number) {
     if (previousTime === undefined) {
         previousTime = currentTime;
     }
 
     const rawDeltaTime = (currentTime - previousTime) / 1000;
-    const deltaTime =
-        Math.min(rawDeltaTime, MAX_DELTA_TIME);
+    const deltaTime = Math.min(rawDeltaTime, MAX_DELTA_TIME); // time passed since previous frame
 
     previousTime = currentTime;
 
     update(deltaTime);
     render();
 
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop); // method that tells the browser to perform the methods inside the function
 }
 // temporary -> <- for debuyg
 window.addEventListener('keydown', handleKeyDown);
