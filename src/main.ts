@@ -26,7 +26,7 @@ const GROUND_Y = 320;
 
 const RUN_FRAMES = [0, 1, 2, 3, 4, 5, 6, 7];
 const JUMP_FRAME = 11;
-const FALL_FRAME = 12  ;
+const FALL_FRAME = 12;
 
 const RUN_ANIMATION_FPS = 11;
 const RUN_FRAME_DURATION = 1 / RUN_ANIMATION_FPS;
@@ -37,7 +37,7 @@ const JUMP_VELOCITY = -520;
 
 const MAX_DELTA_TIME = 0.05;
 
-const WORLD_SPEED = 200; // 200 game pixels / second
+const WORLD_SPEED = 220; // 200 game pixels / second
 const OBSTACLE_RESET_GAP = 150;
 
 let collisionDetected = false;
@@ -51,6 +51,13 @@ const ctx = canvas.getContext('2d')!; // temporary !; to avoid warning
 if (!ctx) {
     throw new Error('2D rendering context not available');
 }
+
+type GameState =
+    | 'ready' // TODO: start screen
+    | 'running'
+    | 'gameOver';
+
+let gameState: GameState = 'running';
 
 const player = {
     x: 100,
@@ -79,10 +86,10 @@ const PLAYER_HITBOXES = {
         height: 73,
     },
 
-      airborne: {
-        offsetX: 10 ,
-        offsetY: player.height - 80   - CAT_BOTTOM_PADDING,
-        width: 89,
+    airborne: {
+        offsetX: 20,
+        offsetY: player.height - 80 - CAT_BOTTOM_PADDING,
+        width: 80,
         height: 35,
     },
 };
@@ -110,6 +117,7 @@ catSpriteSheet.src = '/sprites/cat-run-jump.png';
 // input state
 const input = {
     jumpPressed: false,
+    restartPressed: false,
 };
 
 function triggerAction(action: GameAction) {
@@ -117,14 +125,22 @@ function triggerAction(action: GameAction) {
         case 'jump':
             input.jumpPressed = true;
             break;
+        case 'restart':
+            input.restartPressed = true;
+            break;
+        case 'pause':
+            break;
     }
 }
 
 function resetInput() {
     input.jumpPressed = false;
+    input.restartPressed = false;
 }
 
-function handleKeyDown(event: KeyboardEvent) {
+function handleKeyDown(
+    event: KeyboardEvent
+) {
     if (event.repeat) {
         return;
     }
@@ -133,7 +149,12 @@ function handleKeyDown(event: KeyboardEvent) {
         event.code === 'Space' ||
         event.code === 'ArrowUp'
     ) {
-        event.preventDefault(); // Prevents default behaviour such as scroll down
+        event.preventDefault();
+
+        if (gameState === 'gameOver') {
+            triggerAction('restart');
+            return;
+        }
 
         triggerAction('jump');
     }
@@ -143,6 +164,11 @@ function handlePointerDown(
     event: PointerEvent
 ) {
     event.preventDefault();
+
+    if (gameState === 'gameOver') {
+        triggerAction('restart');
+        return;
+    }
 
     triggerAction('jump');
 }
@@ -231,11 +257,21 @@ function rectanglesOverlap(
     );
 }
 
+function gameOver() {
+    gameState = 'gameOver';
+}
+
 function updateCollision() {
-    collisionDetected = rectanglesOverlap(
+    if (isPlayerCollidingWithObstacle()) {
+        gameOver();
+    }
+}
+
+function isPlayerCollidingWithObstacle() {
+    return rectanglesOverlap(
         getPlayerBounds(),
         getObstacleBounds()
-    );
+    )
 }
 
 function updatePlayerAnimation(
@@ -291,13 +327,9 @@ function updateObstacle(
     obstacle.x -=
         WORLD_SPEED * deltaTime;
 
-    if (obstacle.x + obstacle.width < 0) { // If obstacle is off screen
+    if (obstacle.x + obstacle.width < 0) { // If obstacle is off-screen
         resetObstacle()
     }
-}
-
-function resetObstacle() {
-    obstacle.x = GAME_WIDTH + OBSTACLE_RESET_GAP;
 }
 
 function drawGround() {
@@ -357,6 +389,43 @@ function drawForeground() {
     );
 }
 
+function drawGameOver() {
+    if (gameState !== 'gameOver') {
+        return;
+    }
+
+    ctx.fillStyle =
+        'rgba(255, 255, 255, 0.75)';
+
+    ctx.fillRect(
+        0,
+        0,
+        GAME_WIDTH,
+        GAME_HEIGHT
+    );
+
+    ctx.fillStyle = '#171717';
+    ctx.textAlign = 'center';
+
+    ctx.font =
+        'bold 32px sans-serif';
+
+    ctx.fillText(
+        'Game Over',
+        GAME_WIDTH / 2,
+        170
+    );
+
+    ctx.font =
+        '16px sans-serif';
+
+    ctx.fillText(
+        'Press Space or tap to restart',
+        GAME_WIDTH / 2,
+        210
+    );
+}
+
 function drawPlayer() {
     // Rectangle
     if (!catSpriteLoaded) {
@@ -412,6 +481,8 @@ function render() {
     drawDebugBounds();
 
     drawForeground(); // foreground
+
+    drawGameOver();
 }
 
 function drawDebugBounds() {
@@ -440,9 +511,45 @@ function drawDebugBounds() {
     );
 }
 
+function resetGame() {
+    resetPlayer();
+    resetObstacle();
+
+    gameState = 'running';
+}
+
+function resetPlayer() {
+    player.x = 100;
+    player.y = PLAYER_GROUND_Y;
+
+    player.velocityY = 0;
+    player.isGrounded = true;
+
+    player.frame = RUN_FRAMES[0];
+
+    player.animationTime = 0;
+    player.animationFrameIndex = 0;
+
+    player.state = 'idle';
+}
+
+function resetObstacle() {
+    obstacle.x =
+        GAME_WIDTH +
+        OBSTACLE_RESET_GAP;
+}
 
 // logic, update values
 function update(deltaTime: number) {
+    if (gameState === 'gameOver') {
+        if (input.restartPressed) {
+            resetGame();
+        }
+
+        resetInput();
+        return;
+    }
+
     updatePlayer(deltaTime);
     updatePlayerAnimation(deltaTime);
 
@@ -477,6 +584,7 @@ function gameLoop(currentTime: number) {
 
     requestAnimationFrame(gameLoop); // method that tells the browser to perform the methods inside the function
 }
+
 // temporary -> <- for debuyg
 window.addEventListener('keydown', handleKeyDown);
 
