@@ -33,7 +33,7 @@ const RUN_FRAME_DURATION = 1 / RUN_ANIMATION_FPS;
 
 const PLAYER_SCALE = 0.4
 const GRAVITY = 1400;
-const JUMP_VELOCITY = -520;
+const JUMP_VELOCITY = -560;
 
 const MAX_DELTA_TIME = 0.05;
 
@@ -114,6 +114,8 @@ type Obstacle = {
     y: number;
     width: number;
     height: number;
+
+    passed: boolean;
 };
 
 let obstacles: Obstacle[] = [];
@@ -136,7 +138,34 @@ function createObstacle(): Obstacle {
         y: GROUND_Y - OBSTACLE_HEIGHT,
         width: OBSTACLE_WIDTH,
         height: OBSTACLE_HEIGHT,
+        passed: false
     };
+}
+let score = 0; // score by distance
+const SCORE_SCALE = 0.05
+let distance = 0
+
+function updateScore(deltaTime: number) {
+    distance += WORLD_SPEED * deltaTime
+    score = Math.floor(
+        distance * SCORE_SCALE
+    );
+}
+
+function drawScore() {
+    ctx.save();
+
+    ctx.fillStyle = '#171717';
+    ctx.font = '20px monospace';
+    ctx.textAlign = 'right';
+
+    ctx.fillText(
+        score.toString(),
+        GAME_WIDTH - 20,
+        30
+    );
+
+    ctx.restore();
 }
 
 function spawnObstacle() {
@@ -545,6 +574,7 @@ function render() {
     drawDebugBounds();
 
     drawForeground(); // foreground
+    drawScore();
 
     drawGameOver();
 }
@@ -625,6 +655,7 @@ function update(deltaTime: number) {
 
     updateGroundMarker(deltaTime)
 
+    updateScore(deltaTime)
     updateCollision()
 
     // Mind the order. Should be after updating player and obstacle position.
