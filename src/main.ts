@@ -32,12 +32,19 @@ const RUN_ANIMATION_FPS = 11;
 const RUN_FRAME_DURATION = 1 / RUN_ANIMATION_FPS;
 
 const PLAYER_SCALE = 0.4
-const GRAVITY = 1400;
+const GRAVITY = 1300;
 const JUMP_VELOCITY = -560;
 
 const MAX_DELTA_TIME = 0.05;
 
-const WORLD_SPEED = 220; // 200 game pixels / second
+const INITIAL_WORLD_SPEED = 180;
+const MAX_WORLD_SPEED = 500;
+let difficultyLevel = 0;
+const SPEED_INCREASE_PER_LEVEL = 20;
+
+let worldSpeed = INITIAL_WORLD_SPEED;
+
+
 const OBSTACLE_SPAWN_X =
     GAME_WIDTH + 80;
 
@@ -82,7 +89,7 @@ const PLAYER_GROUND_Y = GROUND_Y - player.height + CAT_BOTTOM_PADDING;
 
 const PLAYER_HITBOXES = {
     grounded: {
-        offsetX: 8,
+        offsetX: 10,
         offsetY: player.height - 73 - CAT_BOTTOM_PADDING,
         width: 91,
         height: 73,
@@ -106,8 +113,13 @@ catSpriteSheet.src = '/sprites/cat-run-jump.png';
 // Obstacles
 const OBSTACLE_WIDTH = 40;
 const OBSTACLE_HEIGHT = 55;
-const OBSTACLE_SPAWN_INTERVAL = 2;
+const INITIAL_SPAWN_INTERVAL = 2;
+const MIN_SPAWN_INTERVAL = 1.3;
+
 let obstacleSpawnTimer = 0;
+const SPAWN_INTERVAL_REDUCTION = 0.1;
+
+let obstacleSpawnInterval = INITIAL_SPAWN_INTERVAL
 
 type Obstacle = {
     x: number;
@@ -146,7 +158,7 @@ const SCORE_SCALE = 0.05
 let distance = 0
 
 function updateScore(deltaTime: number) {
-    distance += WORLD_SPEED * deltaTime
+    distance += worldSpeed * deltaTime
     score = Math.floor(
         distance * SCORE_SCALE
     );
@@ -168,6 +180,33 @@ function drawScore() {
     ctx.restore();
 }
 
+function updateDifficulty() {
+    difficultyLevel =
+        Math.floor(score / 100);
+
+    worldSpeed =
+        INITIAL_WORLD_SPEED +
+        difficultyLevel *
+        SPEED_INCREASE_PER_LEVEL;
+
+    worldSpeed =
+        Math.min(
+            worldSpeed,
+            MAX_WORLD_SPEED
+        );
+
+    obstacleSpawnInterval =
+        INITIAL_SPAWN_INTERVAL -
+        difficultyLevel *
+        SPAWN_INTERVAL_REDUCTION;
+
+    obstacleSpawnInterval =
+        Math.max(
+            obstacleSpawnInterval,
+            MIN_SPAWN_INTERVAL
+        );
+}
+
 function spawnObstacle() {
     obstacles.push(
         createObstacle()
@@ -179,12 +218,8 @@ function updateObstacleSpawning(
 ) {
     obstacleSpawnTimer += deltaTime;
 
-    if (
-        obstacleSpawnTimer >=
-        OBSTACLE_SPAWN_INTERVAL
-    ) {
-        obstacleSpawnTimer -=
-            OBSTACLE_SPAWN_INTERVAL; // preserve extra elapsed time
+    if (obstacleSpawnTimer >= obstacleSpawnInterval) {
+        obstacleSpawnTimer -= obstacleSpawnInterval;
 
         spawnObstacle();
     }
@@ -415,7 +450,7 @@ function updateObstacles(
 ) {
     for (const obstacle of obstacles) {
         obstacle.x -=
-            WORLD_SPEED * deltaTime;
+            worldSpeed * deltaTime;
     }
 
     // remove obstacles out of screen
@@ -459,7 +494,7 @@ function updateGroundMarker(
     deltaTime: number
 ) {
     groundMarker.x -=
-        WORLD_SPEED * deltaTime;
+        worldSpeed * deltaTime;
 
     if (
         groundMarker.x +
@@ -572,11 +607,40 @@ function render() {
     drawPlayer();
 
     drawDebugBounds();
+    drawDebugDifficulty();
 
     drawForeground(); // foreground
     drawScore();
 
     drawGameOver();
+}
+
+function drawDebugDifficulty() {
+    ctx.save();
+
+    ctx.fillStyle = '#171717';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'left';
+
+    ctx.fillText(
+        `Speed: ${worldSpeed}`,
+        20,
+        55
+    );
+
+    ctx.fillText(
+        `Level: ${difficultyLevel}`,
+        20,
+        72
+    );
+
+    ctx.fillText(
+        `Spawn: ${obstacleSpawnInterval.toFixed(2)}`,
+        20,
+        89
+    );
+
+    ctx.restore();
 }
 
 function drawDebugBounds() {
@@ -608,6 +672,10 @@ function drawDebugBounds() {
 }
 
 function resetGame() {
+    distance = 0;
+    worldSpeed = INITIAL_WORLD_SPEED; // will be reset even without
+    obstacleSpawnInterval = INITIAL_SPAWN_INTERVAL;
+
     resetPlayer();
     resetObstacles();
 
@@ -654,9 +722,13 @@ function update(deltaTime: number) {
     updateObstacles(deltaTime);
 
     updateGroundMarker(deltaTime)
-
-    updateScore(deltaTime)
+    
     updateCollision()
+
+    if (gameState === 'running') {
+        updateScore(deltaTime);
+        updateDifficulty();
+    }
 
     // Mind the order. Should be after updating player and obstacle position.
     if (collisionDetected) {
