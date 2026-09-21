@@ -38,7 +38,8 @@ const JUMP_VELOCITY = -520;
 const MAX_DELTA_TIME = 0.05;
 
 const WORLD_SPEED = 220; // 200 game pixels / second
-const OBSTACLE_RESET_GAP = 150;
+const OBSTACLE_SPAWN_X =
+    GAME_WIDTH + 80;
 
 let collisionDetected = false;
 
@@ -59,6 +60,7 @@ type GameState =
 
 let gameState: GameState = 'running';
 
+// Player
 const player = {
     x: 100,
     y: GROUND_Y - (271.5 * PLAYER_SCALE) + CAT_BOTTOM_PADDING,
@@ -94,19 +96,6 @@ const PLAYER_HITBOXES = {
     },
 };
 
-const obstacle = {
-    x: 500,
-    y: GROUND_Y - 55,
-
-    width: 40,
-    height: 55,
-};
-
-const groundMarker = {
-    x: 300,
-    width: 40,
-};
-
 const catSpriteSheet = new Image();
 let catSpriteLoaded = false;
 catSpriteSheet.onload = () => {
@@ -114,12 +103,65 @@ catSpriteSheet.onload = () => {
 };
 catSpriteSheet.src = '/sprites/cat-run-jump.png';
 
-// input state
+// Obstacles
+const OBSTACLE_WIDTH = 40;
+const OBSTACLE_HEIGHT = 55;
+const OBSTACLE_SPAWN_INTERVAL = 2;
+let obstacleSpawnTimer = 0;
+
+type Obstacle = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+let obstacles: Obstacle[] = [];
+
+const groundMarker = {
+    x: 300,
+    width: 40,
+};
+
+// Input state
 const input = {
     jumpPressed: false,
     restartPressed: false,
 };
 
+// Obstacles
+function createObstacle(): Obstacle {
+    return {
+        x: OBSTACLE_SPAWN_X,
+        y: GROUND_Y - OBSTACLE_HEIGHT,
+        width: OBSTACLE_WIDTH,
+        height: OBSTACLE_HEIGHT,
+    };
+}
+
+function spawnObstacle() {
+    obstacles.push(
+        createObstacle()
+    );
+}
+
+function updateObstacleSpawning(
+    deltaTime: number
+) {
+    obstacleSpawnTimer += deltaTime;
+
+    if (
+        obstacleSpawnTimer >=
+        OBSTACLE_SPAWN_INTERVAL
+    ) {
+        obstacleSpawnTimer -=
+            OBSTACLE_SPAWN_INTERVAL; // preserve extra elapsed time
+
+        spawnObstacle();
+    }
+}
+
+// Input methods
 function triggerAction(action: GameAction) {
     switch (action) {
         case 'jump':
@@ -216,6 +258,7 @@ function updatePlayer(deltaTime: number) {
     }
 }
 
+// Bounds
 function getPlayerBounds(): Rect {
     const hitbox = player.isGrounded
         ? PLAYER_HITBOXES.grounded
@@ -229,7 +272,9 @@ function getPlayerBounds(): Rect {
     };
 }
 
-function getObstacleBounds() {
+function getObstacleBounds(
+    obstacle: Obstacle
+): Rect {
     return {
         x: obstacle.x,
         y: obstacle.y,
@@ -261,17 +306,30 @@ function gameOver() {
     gameState = 'gameOver';
 }
 
+function isPlayerCollidingWithObstacle() {
+    const playerBounds =
+        getPlayerBounds();
+
+    for (const obstacle of obstacles) {
+        const obstacleBounds =
+            getObstacleBounds(obstacle);
+
+        if (
+            rectanglesOverlap(
+                playerBounds,
+                obstacleBounds
+            )
+        ) {
+            return true
+        }
+    }
+    return false
+}
+
 function updateCollision() {
     if (isPlayerCollidingWithObstacle()) {
         gameOver();
     }
-}
-
-function isPlayerCollidingWithObstacle() {
-    return rectanglesOverlap(
-        getPlayerBounds(),
-        getObstacleBounds()
-    )
 }
 
 function updatePlayerAnimation(
@@ -310,26 +368,32 @@ function drawBackground() {
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 }
 
-function drawObstacle() {
+function drawObstacles() {
     ctx.fillStyle = '#555';
 
-    ctx.fillRect(
-        obstacle.x,
-        obstacle.y,
-        obstacle.width,
-        obstacle.height
-    );
+    for (const obstacle of obstacles) {
+        ctx.fillRect(
+            obstacle.x,
+            obstacle.y,
+            obstacle.width,
+            obstacle.height
+        );
+    }
 }
 
-function updateObstacle(
+function updateObstacles(
     deltaTime: number
 ) {
-    obstacle.x -=
-        WORLD_SPEED * deltaTime;
-
-    if (obstacle.x + obstacle.width < 0) { // If obstacle is off-screen
-        resetObstacle()
+    for (const obstacle of obstacles) {
+        obstacle.x -=
+            WORLD_SPEED * deltaTime;
     }
+
+    // remove obstacles out of screen
+    obstacles = obstacles.filter(
+        (obstacle) =>
+            obstacle.x + obstacle.width >= 0
+    );
 }
 
 function drawGround() {
@@ -472,10 +536,10 @@ function render() {
 
     drawBackground(); // background
 
-    drawGround(); // world
+    drawGround(); // worlds
     drawGroundMarker();
 
-    drawObstacle(); // game objects
+    drawObstacles(); // game objects
     drawPlayer();
 
     drawDebugBounds();
@@ -489,8 +553,17 @@ function drawDebugBounds() {
     const playerBounds =
         getPlayerBounds();
 
-    const obstacleBounds =
-        getObstacleBounds();
+    for (const obstacle of obstacles) {
+        const bounds =
+            getObstacleBounds(obstacle);
+
+        ctx.strokeRect(
+            bounds.x,
+            bounds.y,
+            bounds.width,
+            bounds.height
+        );
+    }
 
     ctx.strokeStyle = 'red';
 
@@ -502,18 +575,11 @@ function drawDebugBounds() {
     );
 
     ctx.strokeStyle = 'blue';
-
-    ctx.strokeRect(
-        obstacleBounds.x,
-        obstacleBounds.y,
-        obstacleBounds.width,
-        obstacleBounds.height
-    );
 }
 
 function resetGame() {
     resetPlayer();
-    resetObstacle();
+    resetObstacles();
 
     gameState = 'running';
 }
@@ -533,10 +599,11 @@ function resetPlayer() {
     player.state = 'idle';
 }
 
-function resetObstacle() {
-    obstacle.x =
-        GAME_WIDTH +
-        OBSTACLE_RESET_GAP;
+function resetObstacles() {
+    obstacles = [];
+    obstacleSpawnTimer = 0;
+
+    spawnObstacle();
 }
 
 // logic, update values
@@ -553,7 +620,8 @@ function update(deltaTime: number) {
     updatePlayer(deltaTime);
     updatePlayerAnimation(deltaTime);
 
-    updateObstacle(deltaTime);
+    updateObstacleSpawning(deltaTime);
+    updateObstacles(deltaTime);
 
     updateGroundMarker(deltaTime)
 
