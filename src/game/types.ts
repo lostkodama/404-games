@@ -37,6 +37,7 @@ export interface Player extends Rect {
     animationTime: number;
     animationFrameIndex: number;
     state: PlayerState;
+    previousState: PlayerState;
 }
 
 export interface InputState {
@@ -59,7 +60,6 @@ export interface GameData extends ObstacleState {
     distance: number;
     difficultyLevel: number;
     worldSpeed: number;
-    collisionDetected: boolean;
 }
 
 export interface SpriteAssets {

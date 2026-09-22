@@ -1,6 +1,17 @@
-import { GAME_WIDTH, INITIAL_SPAWN_INTERVAL, INITIAL_WORLD_SPEED, MAX_DELTA_TIME, MAX_WORLD_SPEED, MIN_SPAWN_INTERVAL, SCORE_SCALE, SPAWN_INTERVAL_REDUCTION, SPEED_INCREASE_PER_LEVEL } from './constants';
+import {
+    GAME_WIDTH,
+    HIT_FRAME,
+    INITIAL_SPAWN_INTERVAL,
+    INITIAL_WORLD_SPEED,
+    MAX_DELTA_TIME,
+    MAX_WORLD_SPEED,
+    MIN_SPAWN_INTERVAL,
+    SCORE_SCALE,
+    SPAWN_INTERVAL_REDUCTION,
+    SPEED_INCREASE_PER_LEVEL
+} from './constants';
 import type { GameData } from './types';
-import { createPlayer, resetPlayer, setCatFrame } from './player/player';
+import { createPlayer, resetPlayer } from './player/player';
 import { updatePlayer } from './player/playerPhysics';
 import { updatePlayerAnimation } from './player/playerAnimation';
 import { bindInput, createInput, resetInput } from './input/input';
@@ -21,7 +32,6 @@ export function createGameState(): GameData {
         distance: 0,
         difficultyLevel: 0,
         worldSpeed: INITIAL_WORLD_SPEED,
-        collisionDetected: false,
     };
 }
 
@@ -61,6 +71,8 @@ function updateDifficulty(state: GameData) {
 
 function gameOver(state: GameData) {
     state.gameState = 'gameOver';
+    state.player.state = 'hit';
+    state.player.frame = HIT_FRAME; // Added here because we are updating the animation before collision
 }
 
 function updateCollision(state: GameData) {
@@ -112,16 +124,12 @@ export function update(state: GameData, deltaTime: number) {
 
     updateGroundMarker(state, deltaTime);
 
+    // Mind the order. Should be after updating player and obstacle position.
     updateCollision(state);
 
     if (state.gameState === 'running') {
         updateScore(state, deltaTime);
         updateDifficulty(state);
-    }
-
-    // Mind the order. Should be after updating player and obstacle position.
-    if (state.collisionDetected) {
-        console.log('Collision!');
     }
 
     resetInput(state.input);
@@ -148,6 +156,5 @@ export function startGame(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext
     }
 
     bindInput(canvas, state.input, () => state.gameState);
-    setCatFrame(state.player, 0);
     requestAnimationFrame(gameLoop);
 }

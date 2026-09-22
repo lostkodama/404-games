@@ -1,4 +1,4 @@
-import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y, PLAYER_GROUND_Y } from '../constants';
+import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from '../constants';
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
 import type { GameData, GameState, Obstacle, Player, SpriteAssets } from '../types';
 
@@ -148,7 +148,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, player: Player, assets: Sprit
 
         ctx.strokeRect(
             player.x,
-            PLAYER_GROUND_Y,
+            player.y,
             player.width,
             player.height
         );

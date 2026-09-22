@@ -1,15 +1,29 @@
-import { FALL_FRAME, JUMP_FRAME, RUN_FRAME_DURATION, RUN_FRAMES } from '../constants';
+import { FALL_FRAME, JUMP_FRAME, RUN_FRAME_DURATION, HIT_FRAME, RUN_FRAMES } from '../constants';
 import type { Player } from '../types';
 
 export function updatePlayerAnimation(player: Player, deltaTime: number) {
-    if (!player.isGrounded) {
-        if (player.velocityY < 0) {
-            player.frame = JUMP_FRAME; // Less than 0 is UP
-        } else {
-            player.frame = FALL_FRAME; // More than 0 is DOWN
-        }
+    const stateChanged = player.state != player.previousState
 
-        return;
+    if(stateChanged) {
+        player.animationTime = 0 // Reset animation time on state change
+        player.previousState = player.state
+    }
+
+    switch (player.state) {
+        case 'jumping':
+            player.frame = JUMP_FRAME;
+            return;
+
+        case 'falling':
+            player.frame = FALL_FRAME;
+            return;
+
+        case 'hit':
+            player.frame = HIT_FRAME;
+            return;
+
+        case 'running':
+            break;
     }
 
     player.animationTime += deltaTime; // elapsed time per frame

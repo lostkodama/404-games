@@ -18,6 +18,8 @@ export const JUMP_FRAME = 12;
 
 export const FALL_FRAME = 13;
 
+export const HIT_FRAME = 14;
+
 export const RUN_ANIMATION_FPS = 11;
 
 export const RUN_FRAME_DURATION = 1 / RUN_ANIMATION_FPS;
@@ -30,9 +32,9 @@ export const JUMP_VELOCITY = -560;
 
 export const MAX_DELTA_TIME = 0.05;
 
-export const INITIAL_WORLD_SPEED = 180;
+export const INITIAL_WORLD_SPEED = 220;
 
-export const MAX_WORLD_SPEED = 500;
+export const MAX_WORLD_SPEED = 800;
 
 export const SPEED_INCREASE_PER_LEVEL = 20;
 
