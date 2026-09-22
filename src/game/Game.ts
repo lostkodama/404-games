@@ -17,7 +17,8 @@ import { updatePlayerAnimation } from './player/playerAnimation';
 import { bindInput, createInput, resetInput } from './input/input';
 import { resetObstacles, updateObstacles, updateObstacleSpawning } from './obstacles/obstacles';
 import { isPlayerCollidingWithObstacle } from './collision/collision';
-import { loadSprites, render } from './render/renderer';
+import { render } from './render/renderer';
+import { loadSprites } from './render/sprites';
 
 export function createGameState(): GameData {
     return {

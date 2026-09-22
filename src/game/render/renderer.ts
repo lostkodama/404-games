@@ -2,13 +2,6 @@ import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } 
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
 import type { GameData, GameState, Obstacle, Player, SpriteAssets } from '../types';
 
-export function loadSprites(): SpriteAssets {
-    const assets: SpriteAssets = { catSpriteSheet: new Image(), catSpriteLoaded: false };
-    assets.catSpriteSheet.onload = () => { assets.catSpriteLoaded = true; };
-    assets.catSpriteSheet.src = '/sprites/cat-run-jump.png';
-    return assets;
-}
-
 function drawScore(ctx: CanvasRenderingContext2D, score: number) {
     ctx.save();
 

@@ -68,7 +68,17 @@ export interface GameData extends ObstacleState {
     worldSpeed: number;
 }
 
+export interface ObstacleSprite {
+    image: HTMLImageElement;
+    loaded: boolean;
+    frameWidth: number | null;
+    frameHeight: number | null;
+    frameCount: number | null;
+    columns: number | null;
+}
+
 export interface SpriteAssets {
     catSpriteSheet: HTMLImageElement;
     catSpriteLoaded: boolean;
+    obstacles: Record<ObstacleType, ObstacleSprite>;
 }
