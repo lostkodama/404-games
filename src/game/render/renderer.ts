@@ -23,15 +23,32 @@ function drawBackground(ctx: CanvasRenderingContext2D) {
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 }
 
-function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[]) {
+function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], assets: SpriteAssets) {
     ctx.fillStyle = '#555';
 
     for (const obstacle of obstacles) {
-        ctx.fillRect(
-            obstacle.x,
-            obstacle.y,
-            obstacle.width,
-            obstacle.height
+        const sprite = assets.obstacles[obstacle.type];
+        const { frameWidth, frameHeight } = sprite;
+
+        if (!sprite.loaded || frameWidth === null || frameHeight === null ||
+            frameWidth <= 0 || frameHeight <= 0) {
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            continue;
+        }
+
+        // Fit without stretching; keep the sprite centered and grounded within
+        // the existing obstacle bounds. Buildings and cars both use frame zero.
+        const scale = Math.min(obstacle.width / frameWidth, obstacle.height / frameHeight);
+        const width = frameWidth * scale;
+        const height = frameHeight * scale;
+
+        ctx.drawImage(
+            sprite.image,
+            0, 0, frameWidth, frameHeight,
+            obstacle.x + (obstacle.width - width) / 2,
+            obstacle.y + obstacle.height - height,
+            width,
+            height
         );
     }
 }
@@ -216,7 +233,7 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawGround(ctx); // worlds
     drawGroundMarker(ctx, state.groundMarker);
 
-    drawObstacles(ctx, state.obstacles); // game objects
+    drawObstacles(ctx, state.obstacles, assets); // game objects
     drawPlayer(ctx, state.player, assets);
 
     drawDebugBounds(ctx, state.player, state.obstacles);

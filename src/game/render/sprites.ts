@@ -1,13 +1,11 @@
 import type { ObstacleSprite, SpriteAssets } from '../types';
 
-// Fill these in when car.png is added. Frames are read left-to-right,
-// then top-to-bottom in an evenly spaced grid with no gaps or margins.
-// Leave unset rather than guessing the sheet's dimensions or frame count.
+// car.png is a 2172 x 151 horizontal strip with eight equal frame cells.
 const CAR_FRAMES: Pick<ObstacleSprite, 'frameWidth' | 'frameHeight' | 'frameCount' | 'columns'> = {
-    frameWidth: null,
-    frameHeight: null,
-    frameCount: null,
-    columns: null,
+    frameWidth: 2172 / 8,
+    frameHeight: 151,
+    frameCount: 8,
+    columns: 8,
 };
 
 function loadObstacleSprite(src: string, isStatic: boolean): ObstacleSprite {

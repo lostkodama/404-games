@@ -1,7 +1,7 @@
 import { GROUND_Y, OBSTACLE_HEIGHT, OBSTACLE_SPAWN_X, OBSTACLE_WIDTH } from '../constants';
 import type { Obstacle, ObstacleState, ObstacleType } from '../types';
 
-export function createObstacle(type: ObstacleType = 'buildingSmall'): Obstacle {
+export function createObstacle(type: ObstacleType = 'buildingLarge'): Obstacle {
     return {
         type,
         x: OBSTACLE_SPAWN_X,
