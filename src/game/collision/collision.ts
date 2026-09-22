@@ -1,6 +1,6 @@
 import { CAT_BOTTOM_PADDING, PLAYER_SCALE } from '../constants';
 import { OBSTACLE_CONFIG } from '../obstacles/obstacleConfig';
-import type { Obstacle, Player, Rect } from '../types';
+import type { Obstacle, ObstacleSegment, Player, Rect } from '../types';
 
 const PLAYER_HITBOXES = {
     grounded: {
@@ -31,14 +31,18 @@ export function getPlayerBounds(player: Player): Rect {
     };
 }
 
-export function getObstacleBounds(obstacle: Obstacle): Rect {
-    const { sprite, collision } = OBSTACLE_CONFIG[obstacle.type];
+export function getObstacleBounds(obstacle: Obstacle): Rect[] {
+    return obstacle.segments.map(segment => getObstacleSegmentBounds(obstacle, segment));
+}
+
+function getObstacleSegmentBounds(obstacle: Obstacle, segment: ObstacleSegment): Rect {
+    const { sprite, collision } = OBSTACLE_CONFIG[segment.type];
     // Match the renderer's aspect-preserving, centered, bottom-aligned fit.
     const scale = Math.min(
-        obstacle.width / sprite.frameWidth,
-        obstacle.height / sprite.frameHeight
+        segment.width / sprite.frameWidth,
+        segment.height / sprite.frameHeight
     );
-    const spriteX = obstacle.x + (obstacle.width - sprite.frameWidth * scale) / 2;
+    const spriteX = obstacle.x + segment.offsetX + (segment.width - sprite.frameWidth * scale) / 2;
     const spriteY = obstacle.y + obstacle.height - sprite.frameHeight * scale;
 
     return {
@@ -63,17 +67,11 @@ export function isPlayerCollidingWithObstacle(player: Player, obstacles: Obstacl
         getPlayerBounds(player);
 
     for (const obstacle of obstacles) {
-        const obstacleBounds =
-            getObstacleBounds(obstacle);
-
-        if (
-            rectanglesOverlap(
-                playerBounds,
-                obstacleBounds
-            )
-        ) {
-            return true
+        for (const bounds of getObstacleBounds(obstacle)) {
+            if (rectanglesOverlap(playerBounds, bounds)) {
+                return true;
+            }
         }
     }
-    return false
+    return false;
 }

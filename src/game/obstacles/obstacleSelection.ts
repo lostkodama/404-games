@@ -1,29 +1,33 @@
-import { OBSTACLE_CONFIG } from './obstacleConfig';
-import type { ObstacleType } from '../types';
+import { OBSTACLE_PATTERNS } from './obstaclePatterns';
+import type { ObstaclePattern } from '../types';
 
-export function selectObstacleType(
-    previousType: ObstacleType | undefined,
+export function selectObstaclePattern(
+    difficultyLevel: number,
+    previousType: ObstaclePattern | undefined,
     random: () => number = Math.random
-): ObstacleType {
-    const enabled = (Object.keys(OBSTACLE_CONFIG) as ObstacleType[])
-        .filter(type => OBSTACLE_CONFIG[type].spawnWeight > 0);
+): ObstaclePattern {
+    const enabled = (Object.keys(OBSTACLE_PATTERNS) as ObstaclePattern[])
+        .filter(type =>
+            difficultyLevel >= OBSTACLE_PATTERNS[type].minLevel &&
+            OBSTACLE_PATTERNS[type].spawnWeight > 0
+        );
     const eligible = enabled.filter(type =>
-        type !== previousType || OBSTACLE_CONFIG[type].allowConsecutive
+        type !== previousType || OBSTACLE_PATTERNS[type].allowConsecutive
     );
-    // If tuning leaves only a non-repeatable type enabled, allow it rather
-    // than blocking spawning or selecting a type with a zero weight.
+    // If tuning leaves only a non-repeatable pattern enabled, allow it rather
+    // than blocking spawning or selecting a pattern with a zero weight.
     const candidates = eligible.length > 0 ? eligible : enabled;
     const fallback = candidates.at(-1);
     if (fallback === undefined) {
-        throw new Error('At least one obstacle type must have a positive spawn weight');
+        throw new Error('At least one unlocked obstacle pattern must have a positive spawn weight');
     }
 
     const totalWeight = candidates.reduce(
-        (total, type) => total + OBSTACLE_CONFIG[type].spawnWeight, 0
+        (total, type) => total + OBSTACLE_PATTERNS[type].spawnWeight, 0
     );
     let roll = random() * totalWeight;
     for (const type of candidates) {
-        roll -= OBSTACLE_CONFIG[type].spawnWeight;
+        roll -= OBSTACLE_PATTERNS[type].spawnWeight;
         if (roll < 0) {
             return type;
         }

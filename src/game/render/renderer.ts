@@ -27,32 +27,36 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
     ctx.fillStyle = '#555';
 
     for (const obstacle of obstacles) {
-        const sprite = assets.obstacles[obstacle.type];
-        const { frameWidth, frameHeight, columns } = sprite;
+        for (const segment of obstacle.segments) {
+            const x = obstacle.x + segment.offsetX;
+            const y = obstacle.y + obstacle.height - segment.height;
+            const sprite = assets.obstacles[segment.type];
+            const { frameWidth, frameHeight, columns } = sprite;
 
-        if (!sprite.loaded || frameWidth === null || frameHeight === null ||
-            frameWidth <= 0 || frameHeight <= 0 || columns === null || columns <= 0) {
-            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            continue;
+            if (!sprite.loaded || frameWidth === null || frameHeight === null ||
+                frameWidth <= 0 || frameHeight <= 0 || columns === null || columns <= 0) {
+                ctx.fillRect(x, y, segment.width, segment.height);
+                continue;
+            }
+
+            // Fit without stretching; keep the sprite centered and grounded within
+            // the existing obstacle bounds. Buildings always use frame zero.
+            const scale = Math.min(segment.width / frameWidth, segment.height / frameHeight);
+            const width = frameWidth * scale;
+            const height = frameHeight * scale;
+            const frame = obstacle.type === 'car' ? obstacle.animationFrameIndex : 0;
+            const sourceX = (frame % columns) * frameWidth;
+            const sourceY = Math.floor(frame / columns) * frameHeight;
+
+            ctx.drawImage(
+                sprite.image,
+                sourceX, sourceY, frameWidth, frameHeight,
+                x + (segment.width - width) / 2,
+                y + segment.height - height,
+                width,
+                height
+            );
         }
-
-        // Fit without stretching; keep the sprite centered and grounded within
-        // the existing obstacle bounds. Buildings always use frame zero.
-        const scale = Math.min(obstacle.width / frameWidth, obstacle.height / frameHeight);
-        const width = frameWidth * scale;
-        const height = frameHeight * scale;
-        const frame = obstacle.type === 'car' ? obstacle.animationFrameIndex : 0;
-        const sourceX = (frame % columns) * frameWidth;
-        const sourceY = Math.floor(frame / columns) * frameHeight;
-
-        ctx.drawImage(
-            sprite.image,
-            sourceX, sourceY, frameWidth, frameHeight,
-            obstacle.x + (obstacle.width - width) / 2,
-            obstacle.y + obstacle.height - height,
-            width,
-            height
-        );
     }
 }
 
@@ -207,15 +211,9 @@ function drawDebugBounds(ctx: CanvasRenderingContext2D, player: Player, obstacle
     ctx.strokeStyle = 'blue';
 
     for (const obstacle of obstacles) {
-        const bounds =
-            getObstacleBounds(obstacle);
-
-        ctx.strokeRect(
-            bounds.x,
-            bounds.y,
-            bounds.width,
-            bounds.height
-        );
+        for (const bounds of getObstacleBounds(obstacle)) {
+            ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        }
     }
 
     ctx.strokeStyle = 'red';
@@ -241,7 +239,7 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawObstacles(ctx, state.obstacles, assets); // game objects
     drawPlayer(ctx, state.player, assets);
 
-    drawDebugBounds(ctx, state.player, state.obstacles);
+    //drawDebugBounds(ctx, state.player, state.obstacles);
     drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
     drawForeground(ctx); // foreground

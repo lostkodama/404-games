@@ -26,7 +26,18 @@ export type ObstacleType =
     | 'buildingLarge'
     | 'car';
 
+export type ObstaclePattern = ObstacleType | 'doubleBuildingSmall' | 'doubleBuildingLarge';
+
+export interface ObstacleSegment {
+    type: ObstacleType;
+    offsetX: number;
+    width: number;
+    height: number;
+}
+
 export type Obstacle = {
+    pattern: ObstaclePattern;
+    segments: ObstacleSegment[];
     x: number;
     y: number;
     width: number;

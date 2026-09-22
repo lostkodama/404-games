@@ -1,14 +1,24 @@
-import { GROUND_Y, MAX_OBSTACLE_GAP, MIN_OBSTACLE_GAP, OBSTACLE_SPAWN_X } from '../constants';
+import { GROUND_Y, OBSTACLE_SPAWN_X } from '../constants';
 import { OBSTACLE_CONFIG } from './obstacleConfig';
-import { selectObstacleType } from './obstacleSelection';
-import type { Obstacle, ObstacleState, ObstacleType } from '../types';
+import { selectObstaclePattern } from './obstacleSelection';
+import { BUILDING_GROUP_GAP, OBSTACLE_PATTERNS } from './obstaclePatterns';
+import type { Obstacle, ObstacleState, ObstaclePattern } from '../types';
 
-export function createObstacle(type: ObstacleType): Obstacle {
+export function createObstacle(pattern: ObstaclePattern): Obstacle {
+    const { type, count } = OBSTACLE_PATTERNS[pattern];
     const config = OBSTACLE_CONFIG[type];
+    const segments = Array.from({ length: count }, (_, index) => ({
+        type,
+        offsetX: index * (config.renderWidth + BUILDING_GROUP_GAP),
+        width: config.renderWidth,
+        height: config.renderHeight,
+    }));
     const obstacle = {
+        pattern,
+        segments,
         x: OBSTACLE_SPAWN_X,
         y: GROUND_Y - config.renderHeight,
-        width: config.renderWidth,
+        width: count * config.renderWidth + (count - 1) * BUILDING_GROUP_GAP,
         height: config.renderHeight,
         passed: false
     };
@@ -19,23 +29,33 @@ export function createObstacle(type: ObstacleType): Obstacle {
     return { ...obstacle, type };
 }
 
-export function spawnObstacle(state: ObstacleState, random: () => number = Math.random) {
-    const type = selectObstacleType(state.lastSpawnedObstacle?.type, random);
-    const obstacle = createObstacle(type);
+export function spawnObstacle(
+    state: ObstacleState,
+    difficultyLevel: number,
+    random: () => number = Math.random
+) {
+    const pattern = selectObstaclePattern(difficultyLevel, state.lastSpawnedObstacle?.pattern, random);
+    const obstacle = createObstacle(pattern);
     state.obstacles.push(obstacle);
     state.lastSpawnedObstacle = obstacle;
-    // Sample once per successful spawn, not once per update.
-    state.nextObstacleGap = MIN_OBSTACLE_GAP + Math.floor(
-        random() * (MAX_OBSTACLE_GAP - MIN_OBSTACLE_GAP + 1)
+    // Sample the gap after this spawned pattern once, and retain it until
+    // the next spawn. Pattern selection and gap selection use separate draws.
+    const { minNextGap, maxNextGap } = OBSTACLE_PATTERNS[pattern];
+    state.nextObstacleGap = minNextGap + Math.floor(
+        random() * (maxNextGap - minNextGap + 1)
     );
 }
 
-export function updateObstacleSpawning(state: ObstacleState, random: () => number = Math.random) {
+export function updateObstacleSpawning(
+    state: ObstacleState,
+    difficultyLevel: number,
+    random: () => number = Math.random
+) {
     const previous = state.lastSpawnedObstacle;
     const previousRight = previous ? previous.x + previous.width : undefined;
 
     if (previousRight === undefined || OBSTACLE_SPAWN_X - previousRight >= state.nextObstacleGap) {
-        spawnObstacle(state, random);
+        spawnObstacle(state, difficultyLevel, random);
     }
 }
 
@@ -87,5 +107,6 @@ export function resetObstacles(state: ObstacleState, random: () => number = Math
     state.obstacles = [];
     state.lastSpawnedObstacle = null;
 
-    spawnObstacle(state, random);
+    // A restarted run uses the initial unlock pool, not the previous run’s level.
+    spawnObstacle(state, 0, random);
 }

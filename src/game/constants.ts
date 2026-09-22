@@ -28,11 +28,11 @@ export const PLAYER_SCALE = 0.4
 
 export const GRAVITY = 1300;
 
-export const JUMP_VELOCITY = -560;
+export const JUMP_VELOCITY = -520;
 
 export const MAX_DELTA_TIME = 0.05;
 
-export const INITIAL_WORLD_SPEED = 220;
+export const INITIAL_WORLD_SPEED = 260;
 
 export const MAX_WORLD_SPEED = 800;
 
@@ -40,11 +40,6 @@ export const SPEED_INCREASE_PER_LEVEL = 20;
 
 export const OBSTACLE_SPAWN_X =
     GAME_WIDTH + 80;
-
-// At MAX_WORLD_SPEED, the minimum gives 1.05s between 40px obstacles:
-// enough for the current ~0.86s jump plus a recovery margin.
-export const MIN_OBSTACLE_GAP = 800;
-export const MAX_OBSTACLE_GAP = 1000;
 
 export const SCORE_SCALE = 0.05
 

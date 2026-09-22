@@ -4,7 +4,6 @@ import {
     INITIAL_WORLD_SPEED,
     MAX_DELTA_TIME,
     MAX_WORLD_SPEED,
-    MIN_OBSTACLE_GAP,
     SCORE_SCALE,
     SPEED_INCREASE_PER_LEVEL
 } from './constants';
@@ -24,7 +23,7 @@ export function createGameState(): GameData {
         player: createPlayer(),
         input: createInput(),
         obstacles: [],
-        nextObstacleGap: MIN_OBSTACLE_GAP,
+        nextObstacleGap: 0, // No previous obstacle; the first spawn chooses its gap.
         lastSpawnedObstacle: null,
         groundMarker: { x: 300, width: 40 },
         score: 0,
@@ -109,7 +108,7 @@ export function update(state: GameData, deltaTime: number) {
     updatePlayerAnimation(state.player, deltaTime);
 
     updateObstacles(state, state.worldSpeed, deltaTime);
-    updateObstacleSpawning(state);
+    updateObstacleSpawning(state, state.difficultyLevel);
 
     updateGroundMarker(state, deltaTime);
 
