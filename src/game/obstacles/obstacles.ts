@@ -1,4 +1,4 @@
-import { GROUND_Y, OBSTACLE_SPAWN_X } from '../constants';
+import { GROUND_Y, OBSTACLE_GAP, OBSTACLE_SPAWN_X } from '../constants';
 import { OBSTACLE_CONFIG } from './obstacleConfig';
 import type { Obstacle, ObstacleState, ObstacleType } from '../types';
 
@@ -25,12 +25,11 @@ export function spawnObstacle(state: ObstacleState) {
     );
 }
 
-export function updateObstacleSpawning(state: ObstacleState, deltaTime: number) {
-    state.obstacleSpawnTimer += deltaTime;
+export function updateObstacleSpawning(state: ObstacleState) {
+    const previous = state.obstacles.at(-1);
+    const previousRight = previous ? previous.x + previous.width : undefined;
 
-    if (state.obstacleSpawnTimer >= state.obstacleSpawnInterval) {
-        state.obstacleSpawnTimer -= state.obstacleSpawnInterval;
-
+    if (previousRight === undefined || OBSTACLE_SPAWN_X - previousRight >= OBSTACLE_GAP) {
         spawnObstacle(state);
     }
 }
@@ -70,7 +69,6 @@ export function updateObstacles(state: ObstacleState, worldSpeed: number, deltaT
 
 export function resetObstacles(state: ObstacleState) {
     state.obstacles = [];
-    state.obstacleSpawnTimer = 0;
 
     spawnObstacle(state);
 }

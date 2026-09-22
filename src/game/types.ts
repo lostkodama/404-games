@@ -59,8 +59,6 @@ export interface InputState {
 
 export interface ObstacleState {
     obstacles: Obstacle[];
-    obstacleSpawnTimer: number;
-    obstacleSpawnInterval: number;
 }
 
 export interface GameData extends ObstacleState {

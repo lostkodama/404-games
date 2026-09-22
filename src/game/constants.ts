@@ -41,11 +41,8 @@ export const SPEED_INCREASE_PER_LEVEL = 20;
 export const OBSTACLE_SPAWN_X =
     GAME_WIDTH + 80;
 
-export const INITIAL_SPAWN_INTERVAL = 2;
-
-export const MIN_SPAWN_INTERVAL = 1.3;
-
-export const SPAWN_INTERVAL_REDUCTION = 0.1;
+// Minimum horizontal space from the previous obstacle’s right edge.
+export const OBSTACLE_GAP = 600;
 
 export const SCORE_SCALE = 0.05
 

@@ -1,13 +1,10 @@
 import {
     GAME_WIDTH,
     HIT_FRAME,
-    INITIAL_SPAWN_INTERVAL,
     INITIAL_WORLD_SPEED,
     MAX_DELTA_TIME,
     MAX_WORLD_SPEED,
-    MIN_SPAWN_INTERVAL,
     SCORE_SCALE,
-    SPAWN_INTERVAL_REDUCTION,
     SPEED_INCREASE_PER_LEVEL
 } from './constants';
 import type { GameData } from './types';
@@ -26,8 +23,6 @@ export function createGameState(): GameData {
         player: createPlayer(),
         input: createInput(),
         obstacles: [],
-        obstacleSpawnTimer: 0,
-        obstacleSpawnInterval: INITIAL_SPAWN_INTERVAL,
         groundMarker: { x: 300, width: 40 },
         score: 0,
         distance: 0,
@@ -58,16 +53,7 @@ function updateDifficulty(state: GameData) {
             MAX_WORLD_SPEED
         );
 
-    state.obstacleSpawnInterval =
-        INITIAL_SPAWN_INTERVAL -
-        state.difficultyLevel *
-        SPAWN_INTERVAL_REDUCTION;
 
-    state.obstacleSpawnInterval =
-        Math.max(
-            state.obstacleSpawnInterval,
-            MIN_SPAWN_INTERVAL
-        );
 }
 
 function gameOver(state: GameData) {
@@ -99,7 +85,6 @@ function updateGroundMarker(state: GameData, deltaTime: number) {
 export function resetGame(state: GameData) {
     state.distance = 0;
     state.worldSpeed = INITIAL_WORLD_SPEED; // will be reset even without
-    state.obstacleSpawnInterval = INITIAL_SPAWN_INTERVAL;
 
     resetPlayer(state.player);
     resetObstacles(state);
@@ -120,8 +105,8 @@ export function update(state: GameData, deltaTime: number) {
     updatePlayer(state.player, state.input, deltaTime);
     updatePlayerAnimation(state.player, deltaTime);
 
-    updateObstacleSpawning(state, deltaTime);
     updateObstacles(state, state.worldSpeed, deltaTime);
+    updateObstacleSpawning(state);
 
     updateGroundMarker(state, deltaTime);
 
