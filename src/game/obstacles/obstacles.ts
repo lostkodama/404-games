@@ -2,7 +2,7 @@ import { GROUND_Y, OBSTACLE_SPAWN_X } from '../constants';
 import { OBSTACLE_CONFIG } from './obstacleConfig';
 import type { Obstacle, ObstacleState, ObstacleType } from '../types';
 
-export function createObstacle(type: ObstacleType = 'buildingLarge'): Obstacle {
+export function createObstacle(type: ObstacleType): Obstacle {
     const config = OBSTACLE_CONFIG[type];
     return {
         type,
@@ -16,7 +16,8 @@ export function createObstacle(type: ObstacleType = 'buildingLarge'): Obstacle {
 
 export function spawnObstacle(state: ObstacleState) {
     state.obstacles.push(
-        createObstacle()
+        // Switch to 'buildingSmall' or 'car' here for manual testing.
+        createObstacle('car')
     );
 }
 
