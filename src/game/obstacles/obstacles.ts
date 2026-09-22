@@ -1,5 +1,6 @@
 import { GROUND_Y, MAX_OBSTACLE_GAP, MIN_OBSTACLE_GAP, OBSTACLE_SPAWN_X } from '../constants';
 import { OBSTACLE_CONFIG } from './obstacleConfig';
+import { selectObstacleType } from './obstacleSelection';
 import type { Obstacle, ObstacleState, ObstacleType } from '../types';
 
 export function createObstacle(type: ObstacleType): Obstacle {
@@ -19,8 +20,8 @@ export function createObstacle(type: ObstacleType): Obstacle {
 }
 
 export function spawnObstacle(state: ObstacleState, random: () => number = Math.random) {
-    // Switch to 'buildingSmall' or 'car' here for manual testing.
-    const obstacle = createObstacle('buildingLarge');
+    const type = selectObstacleType(state.lastSpawnedObstacle?.type, random);
+    const obstacle = createObstacle(type);
     state.obstacles.push(obstacle);
     state.lastSpawnedObstacle = obstacle;
     // Sample once per successful spawn, not once per update.

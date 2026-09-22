@@ -1,6 +1,8 @@
 import type { ObstacleType } from '../types';
 
 export interface ObstacleConfig {
+    readonly spawnWeight: number;
+    readonly allowConsecutive: boolean;
     readonly renderWidth: number;
     readonly renderHeight: number;
     // Effective screen velocity is -Math.max(0, worldSpeed * movementMultiplier).
@@ -28,6 +30,8 @@ export interface ObstacleConfig {
 // The renderer fits each frame inside these bounds without stretching it.
 export const OBSTACLE_CONFIG = {
     buildingSmall: {
+        spawnWeight: 5,
+        allowConsecutive: true,
         renderWidth: 40,
         renderHeight: 55,
         movementMultiplier: 1,
@@ -41,6 +45,8 @@ export const OBSTACLE_CONFIG = {
         },
     },
     buildingLarge: {
+        spawnWeight: 3,
+        allowConsecutive: false,
         renderWidth: 40,
         renderHeight: 55,
         movementMultiplier: 1,
@@ -54,6 +60,8 @@ export const OBSTACLE_CONFIG = {
         },
     },
     car: {
+        spawnWeight: 2,
+        allowConsecutive: true,
         renderWidth: 40,
         renderHeight: 55,
         movementMultiplier: 0.8,
