@@ -4,14 +4,18 @@ import type { Obstacle, ObstacleState, ObstacleType } from '../types';
 
 export function createObstacle(type: ObstacleType): Obstacle {
     const config = OBSTACLE_CONFIG[type];
-    return {
-        type,
+    const obstacle = {
         x: OBSTACLE_SPAWN_X,
         y: GROUND_Y - config.renderHeight,
         width: config.renderWidth,
         height: config.renderHeight,
         passed: false
     };
+
+    if (type === 'car') {
+        return { ...obstacle, type, animationTime: 0, animationFrameIndex: 0 };
+    }
+    return { ...obstacle, type };
 }
 
 export function spawnObstacle(state: ObstacleState) {
@@ -31,6 +35,22 @@ export function updateObstacleSpawning(state: ObstacleState, deltaTime: number) 
     }
 }
 
+function updateObstacleAnimation(obstacle: Obstacle, deltaTime: number) {
+    if (obstacle.type !== 'car') {
+        return;
+    }
+
+    const config = OBSTACLE_CONFIG.car;
+    const frameDuration = 1 / config.animationFps;
+    obstacle.animationTime += deltaTime;
+
+    while (obstacle.animationTime >= frameDuration) {
+        obstacle.animationTime -= frameDuration;
+        obstacle.animationFrameIndex =
+            (obstacle.animationFrameIndex + 1) % config.sprite.frameCount;
+    }
+}
+
 export function updateObstacles(state: ObstacleState, worldSpeed: number, deltaTime: number) {
     for (const obstacle of state.obstacles) {
         const speed = Math.max(
@@ -38,6 +58,7 @@ export function updateObstacles(state: ObstacleState, worldSpeed: number, deltaT
             worldSpeed * OBSTACLE_CONFIG[obstacle.type].movementMultiplier
         );
         obstacle.x -= speed * deltaTime;
+        updateObstacleAnimation(obstacle, deltaTime);
     }
 
     // Remove obstacles that have left the screen.

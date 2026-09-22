@@ -28,23 +28,26 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
 
     for (const obstacle of obstacles) {
         const sprite = assets.obstacles[obstacle.type];
-        const { frameWidth, frameHeight } = sprite;
+        const { frameWidth, frameHeight, columns } = sprite;
 
         if (!sprite.loaded || frameWidth === null || frameHeight === null ||
-            frameWidth <= 0 || frameHeight <= 0) {
+            frameWidth <= 0 || frameHeight <= 0 || columns === null || columns <= 0) {
             ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             continue;
         }
 
         // Fit without stretching; keep the sprite centered and grounded within
-        // the existing obstacle bounds. Buildings and cars both use frame zero.
+        // the existing obstacle bounds. Buildings always use frame zero.
         const scale = Math.min(obstacle.width / frameWidth, obstacle.height / frameHeight);
         const width = frameWidth * scale;
         const height = frameHeight * scale;
+        const frame = obstacle.type === 'car' ? obstacle.animationFrameIndex : 0;
+        const sourceX = (frame % columns) * frameWidth;
+        const sourceY = Math.floor(frame / columns) * frameHeight;
 
         ctx.drawImage(
             sprite.image,
-            0, 0, frameWidth, frameHeight,
+            sourceX, sourceY, frameWidth, frameHeight,
             obstacle.x + (obstacle.width - width) / 2,
             obstacle.y + obstacle.height - height,
             width,

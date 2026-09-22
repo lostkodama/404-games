@@ -6,6 +6,7 @@ export interface ObstacleConfig {
     // Effective screen velocity is -Math.max(0, worldSpeed * movementMultiplier).
     // A value between 0 and 1 moves right relative to the scrolling world.
     readonly movementMultiplier: number;
+    readonly animationFps?: number;
     readonly sprite: {
         readonly src: string;
         readonly frameWidth: number;
@@ -46,6 +47,7 @@ export const OBSTACLE_CONFIG = {
         renderWidth: 40,
         renderHeight: 55,
         movementMultiplier: 0.8,
+        animationFps: 8,
         sprite: {
             src: '/sprites/car.png',
             frameWidth: 2172 / 8,

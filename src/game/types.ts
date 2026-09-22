@@ -27,14 +27,20 @@ export type ObstacleType =
     | 'car';
 
 export type Obstacle = {
-    type: ObstacleType;
     x: number;
     y: number;
     width: number;
     height: number;
 
     passed: boolean;
-};
+} & (
+    | { type: Exclude<ObstacleType, 'car'> }
+    | {
+        type: 'car';
+        animationTime: number;
+        animationFrameIndex: number;
+    }
+);
 
 export interface Player extends Rect {
     frame: number;
