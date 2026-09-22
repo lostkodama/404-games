@@ -21,7 +21,13 @@ export type Rect = {
     height: number;
 };
 
+export type ObstacleType =
+    | 'buildingSmall'
+    | 'buildingLarge'
+    | 'car';
+
 export type Obstacle = {
+    type: ObstacleType;
     x: number;
     y: number;
     width: number;
