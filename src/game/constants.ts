@@ -41,10 +41,6 @@ export const SPEED_INCREASE_PER_LEVEL = 20;
 export const OBSTACLE_SPAWN_X =
     GAME_WIDTH + 80;
 
-export const OBSTACLE_WIDTH = 40;
-
-export const OBSTACLE_HEIGHT = 55;
-
 export const INITIAL_SPAWN_INTERVAL = 2;
 
 export const MIN_SPAWN_INTERVAL = 1.3;

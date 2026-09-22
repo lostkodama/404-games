@@ -1,13 +1,15 @@
-import { GROUND_Y, OBSTACLE_HEIGHT, OBSTACLE_SPAWN_X, OBSTACLE_WIDTH } from '../constants';
+import { GROUND_Y, OBSTACLE_SPAWN_X } from '../constants';
+import { OBSTACLE_CONFIG } from './obstacleConfig';
 import type { Obstacle, ObstacleState, ObstacleType } from '../types';
 
 export function createObstacle(type: ObstacleType = 'buildingLarge'): Obstacle {
+    const config = OBSTACLE_CONFIG[type];
     return {
         type,
         x: OBSTACLE_SPAWN_X,
-        y: GROUND_Y - OBSTACLE_HEIGHT,
-        width: OBSTACLE_WIDTH,
-        height: OBSTACLE_HEIGHT,
+        y: GROUND_Y - config.renderHeight,
+        width: config.renderWidth,
+        height: config.renderHeight,
         passed: false
     };
 }
@@ -31,7 +33,7 @@ export function updateObstacleSpawning(state: ObstacleState, deltaTime: number) 
 export function updateObstacles(state: ObstacleState, worldSpeed: number, deltaTime: number) {
     for (const obstacle of state.obstacles) {
         obstacle.x -=
-            worldSpeed * deltaTime;
+            worldSpeed * OBSTACLE_CONFIG[obstacle.type].movementMultiplier * deltaTime;
     }
 
     // Remove obstacles that have left the screen.
