@@ -21,7 +21,7 @@ export function createObstacle(type: ObstacleType): Obstacle {
 export function spawnObstacle(state: ObstacleState) {
     state.obstacles.push(
         // Switch to 'buildingSmall' or 'car' here for manual testing.
-        createObstacle('car')
+        createObstacle('buildingLarge')
     );
 }
 

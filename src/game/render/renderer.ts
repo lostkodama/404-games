@@ -204,6 +204,8 @@ function drawDebugBounds(ctx: CanvasRenderingContext2D, player: Player, obstacle
     const playerBounds =
         getPlayerBounds(player);
 
+    ctx.strokeStyle = 'blue';
+
     for (const obstacle of obstacles) {
         const bounds =
             getObstacleBounds(obstacle);

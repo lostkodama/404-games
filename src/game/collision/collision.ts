@@ -1,4 +1,5 @@
 import { CAT_BOTTOM_PADDING, PLAYER_SCALE } from '../constants';
+import { OBSTACLE_CONFIG } from '../obstacles/obstacleConfig';
 import type { Obstacle, Player, Rect } from '../types';
 
 const PLAYER_HITBOXES = {
@@ -31,11 +32,20 @@ export function getPlayerBounds(player: Player): Rect {
 }
 
 export function getObstacleBounds(obstacle: Obstacle): Rect {
+    const { sprite, collision } = OBSTACLE_CONFIG[obstacle.type];
+    // Match the renderer's aspect-preserving, centered, bottom-aligned fit.
+    const scale = Math.min(
+        obstacle.width / sprite.frameWidth,
+        obstacle.height / sprite.frameHeight
+    );
+    const spriteX = obstacle.x + (obstacle.width - sprite.frameWidth * scale) / 2;
+    const spriteY = obstacle.y + obstacle.height - sprite.frameHeight * scale;
+
     return {
-        x: obstacle.x,
-        y: obstacle.y,
-        width: obstacle.width,
-        height: obstacle.height,
+        x: spriteX + collision.offsetX * scale,
+        y: spriteY + collision.offsetY * scale,
+        width: collision.width * scale,
+        height: collision.height * scale,
     };
 }
 
