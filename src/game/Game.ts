@@ -4,6 +4,7 @@ import {
     INITIAL_WORLD_SPEED,
     MAX_DELTA_TIME,
     MAX_WORLD_SPEED,
+    MIN_OBSTACLE_GAP,
     SCORE_SCALE,
     SPEED_INCREASE_PER_LEVEL
 } from './constants';
@@ -23,6 +24,8 @@ export function createGameState(): GameData {
         player: createPlayer(),
         input: createInput(),
         obstacles: [],
+        nextObstacleGap: MIN_OBSTACLE_GAP,
+        lastSpawnedObstacle: null,
         groundMarker: { x: 300, width: 40 },
         score: 0,
         distance: 0,

@@ -1,4 +1,4 @@
-import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y, OBSTACLE_GAP } from '../constants';
+import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from '../constants';
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
 import type { GameData, GameState, Obstacle, Player, SpriteAssets } from '../types';
 
@@ -62,7 +62,7 @@ function drawGround(ctx: CanvasRenderingContext2D) {
 
     ctx.beginPath();
     ctx.moveTo(0, GROUND_Y);
-    ctx.lineTo(GAME_WIDTH, GROUND_Y, OBSTACLE_GAP);
+    ctx.lineTo(GAME_WIDTH, GROUND_Y);
     ctx.stroke();
 }
 
@@ -172,7 +172,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, player: Player, assets: Sprit
     drawPlayerFrame(ctx, player, assets, player.frame)
 }
 
-function drawDebugDifficulty(ctx: CanvasRenderingContext2D, worldSpeed: number, difficultyLevel: number) {
+function drawDebugDifficulty(ctx: CanvasRenderingContext2D, worldSpeed: number, difficultyLevel: number, nextObstacleGap: number) {
     ctx.save();
 
     ctx.fillStyle = '#171717';
@@ -192,7 +192,7 @@ function drawDebugDifficulty(ctx: CanvasRenderingContext2D, worldSpeed: number, 
     );
 
     ctx.fillText(
-        `Gap: ${OBSTACLE_GAP}px`,
+        `Gap: ${nextObstacleGap}px`,
         20,
         89
     );
@@ -242,7 +242,7 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawPlayer(ctx, state.player, assets);
 
     drawDebugBounds(ctx, state.player, state.obstacles);
-    drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel);
+    drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
     drawForeground(ctx); // foreground
     drawScore(ctx, state.score);

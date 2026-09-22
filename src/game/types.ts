@@ -59,6 +59,9 @@ export interface InputState {
 
 export interface ObstacleState {
     obstacles: Obstacle[];
+    nextObstacleGap: number;
+    // Retain the spacing reference after it leaves the active obstacle list.
+    lastSpawnedObstacle: Obstacle | null;
 }
 
 export interface GameData extends ObstacleState {

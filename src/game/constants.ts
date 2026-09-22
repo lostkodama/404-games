@@ -41,8 +41,10 @@ export const SPEED_INCREASE_PER_LEVEL = 20;
 export const OBSTACLE_SPAWN_X =
     GAME_WIDTH + 80;
 
-// Minimum horizontal space from the previous obstacle’s right edge.
-export const OBSTACLE_GAP = 600;
+// At MAX_WORLD_SPEED, the minimum gives 1.05s between 40px obstacles:
+// enough for the current ~0.86s jump plus a recovery margin.
+export const MIN_OBSTACLE_GAP = 800;
+export const MAX_OBSTACLE_GAP = 1000;
 
 export const SCORE_SCALE = 0.05
 
