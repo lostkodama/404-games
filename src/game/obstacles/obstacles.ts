@@ -33,8 +33,11 @@ export function updateObstacleSpawning(state: ObstacleState, deltaTime: number) 
 
 export function updateObstacles(state: ObstacleState, worldSpeed: number, deltaTime: number) {
     for (const obstacle of state.obstacles) {
-        obstacle.x -=
-            worldSpeed * OBSTACLE_CONFIG[obstacle.type].movementMultiplier * deltaTime;
+        const speed = Math.max(
+            0,
+            worldSpeed * OBSTACLE_CONFIG[obstacle.type].movementMultiplier
+        );
+        obstacle.x -= speed * deltaTime;
     }
 
     // Remove obstacles that have left the screen.

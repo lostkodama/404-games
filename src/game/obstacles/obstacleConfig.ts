@@ -3,7 +3,7 @@ import type { ObstacleType } from '../types';
 export interface ObstacleConfig {
     readonly renderWidth: number;
     readonly renderHeight: number;
-    // Effective screen velocity is -worldSpeed * movementMultiplier.
+    // Effective screen velocity is -Math.max(0, worldSpeed * movementMultiplier).
     // A value between 0 and 1 moves right relative to the scrolling world.
     readonly movementMultiplier: number;
     readonly sprite: {
@@ -15,7 +15,7 @@ export interface ObstacleConfig {
     };
 }
 
-// Keep existing bounds and movement until type-specific tuning is introduced.
+// Keep existing bounds until type-specific sizing is introduced.
 // The renderer fits each frame inside these bounds without stretching it.
 export const OBSTACLE_CONFIG = {
     buildingSmall: {
@@ -45,7 +45,7 @@ export const OBSTACLE_CONFIG = {
     car: {
         renderWidth: 40,
         renderHeight: 55,
-        movementMultiplier: 1,
+        movementMultiplier: 0.8,
         sprite: {
             src: '/sprites/car.png',
             frameWidth: 2172 / 8,
