@@ -47,3 +47,5 @@ export const OBSTACLE_SPAWN_X =
 export const SCORE_SCALE = 0.05
 
 export const PLAYER_GROUND_Y = GROUND_Y - 311 * PLAYER_SCALE + CAT_BOTTOM_PADDING;
+
+export const RESTART_COOLDOWN_SECONDS = 2;

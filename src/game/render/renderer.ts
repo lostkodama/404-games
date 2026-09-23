@@ -120,7 +120,7 @@ function drawForeground(ctx: CanvasRenderingContext2D) {
     );
 }
 
-function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState) {
+function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, restartCooldown: number) {
     if (gameState !== 'gameOver') {
         return;
     }
@@ -151,7 +151,7 @@ function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState) {
         '16px sans-serif';
 
     ctx.fillText(
-        'Press Space or tap to restart',
+        restartCooldown > 0 ? Math.ceil(restartCooldown).toString() : 'Press Space or tap to restart',
         GAME_WIDTH / 2,
         210
     );
@@ -266,5 +266,5 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawForeground(ctx); // foreground
     drawScore(ctx, state.score);
 
-    drawGameOver(ctx, state.gameState);
+    drawGameOver(ctx, state.gameState, state.restartCooldown);
 }
