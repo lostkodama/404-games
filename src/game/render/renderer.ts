@@ -2,6 +2,24 @@ import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } 
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
 import type { GameData, GameState, Obstacle, Player, SpriteAssets } from '../types';
 
+const SHOW_COLLISION_BOUNDS = true;
+
+function prepareCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const pixelRatio = window.devicePixelRatio || 1;
+    const width = Math.max(1, Math.round(canvas.clientWidth * pixelRatio));
+    const height = Math.max(1, Math.round(canvas.clientHeight * pixelRatio));
+
+    // Resize only when the display size/density changes; resizing clears context state.
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+    }
+    // Keep all gameplay and drawing coordinates in the original 600 × 400 world.
+    ctx.setTransform(width / GAME_WIDTH, 0, 0, height / GAME_HEIGHT, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+}
+
 function drawScore(ctx: CanvasRenderingContext2D, score: number) {
     ctx.save();
 
@@ -25,6 +43,7 @@ function drawBackground(ctx: CanvasRenderingContext2D) {
 
 function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], assets: SpriteAssets) {
     ctx.fillStyle = '#555';
+    const { a: scaleX, d: scaleY } = ctx.getTransform();
 
     for (const obstacle of obstacles) {
         for (const segment of obstacle.segments) {
@@ -51,8 +70,9 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
             ctx.drawImage(
                 sprite.image,
                 sourceX, sourceY, frameWidth, frameHeight,
-                x + (segment.width - width) / 2,
-                y + segment.height - height,
+                // Snap only the rendered position, preserving fractional physics/collision.
+                Math.round((x + (segment.width - width) / 2) * scaleX) / scaleX,
+                Math.round((y + segment.height - height) * scaleY) / scaleY,
                 width,
                 height
             );
@@ -229,7 +249,8 @@ function drawDebugBounds(ctx: CanvasRenderingContext2D, player: Player, obstacle
 }
 
 export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, state: GameData, assets: SpriteAssets) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    prepareCanvas(ctx, canvas);
+    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
     drawBackground(ctx); // background
 
@@ -239,7 +260,7 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawObstacles(ctx, state.obstacles, assets); // game objects
     drawPlayer(ctx, state.player, assets);
 
-    //drawDebugBounds(ctx, state.player, state.obstacles);
+    if (SHOW_COLLISION_BOUNDS) drawDebugBounds(ctx, state.player, state.obstacles);
     drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
     drawForeground(ctx); // foreground

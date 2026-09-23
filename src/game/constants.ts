@@ -24,9 +24,9 @@ export const RUN_ANIMATION_FPS = 11;
 
 export const RUN_FRAME_DURATION = 1 / RUN_ANIMATION_FPS;
 
-export const PLAYER_SCALE = 0.4
+export const PLAYER_SCALE = 0.3
 
-export const GRAVITY = 1300;
+export const GRAVITY = 1400;
 
 export const JUMP_VELOCITY = -520;
 
