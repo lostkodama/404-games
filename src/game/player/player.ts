@@ -1,14 +1,14 @@
-import {CAT_BOTTOM_PADDING, GROUND_Y, PLAYER_GROUND_Y, PLAYER_SCALE, RUN_FRAMES} from '../constants';
+import {IDLE_FRAME, PLAYER_GROUND_Y, PLAYER_SCALE, RUN_FRAMES} from '../constants';
 import type {Player} from '../types';
 
 export function createPlayer(): Player {
     return {
         x: 100,
-        y: GROUND_Y - (271.5 * PLAYER_SCALE) + CAT_BOTTOM_PADDING,
+        y: PLAYER_GROUND_Y,
         width: 271.5 * PLAYER_SCALE,
         height: 311 * PLAYER_SCALE,
 
-        frame: RUN_FRAMES[0],
+        frame: IDLE_FRAME,
 
         velocityY: 0,
         isGrounded: true,
@@ -16,8 +16,8 @@ export function createPlayer(): Player {
         animationTime: 0,
         animationFrameIndex: 0,
 
-        state: 'running',
-        previousState: 'running',
+        state: 'idle',
+        previousState: 'idle',
     };
 }
 

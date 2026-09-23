@@ -14,6 +14,9 @@ export const GROUND_Y = 320;
 
 export const RUN_FRAMES = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
+// Static ready pose; change this index after reviewing the cat sprite sheet.
+export const IDLE_FRAME = RUN_FRAMES[0];
+
 export const JUMP_FRAME = 12;
 
 export const FALL_FRAME = 13;

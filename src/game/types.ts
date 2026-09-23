@@ -4,6 +4,7 @@ export type GameAction =
     | 'restart';
 
 export type PlayerState =
+    | 'idle'
     | 'running'
     | 'jumping'
     | 'falling'

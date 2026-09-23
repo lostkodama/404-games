@@ -22,7 +22,7 @@ type OnGameEvent = (event: GameEvent) => void;
 
 export function createGameState(): GameData {
     return {
-        gameState: 'running',
+        gameState: 'ready',
         player: createPlayer(),
         input: createInput(),
         obstacles: [],
@@ -108,6 +108,16 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
 
         resetInput(state.input);
         return;
+    }
+
+    if (state.gameState === 'ready') {
+        if (!state.input.jumpPressed) {
+            resetInput(state.input);
+            return;
+        }
+        state.gameState = 'running';
+        onEvent('start');
+        // Keep jumpPressed for the normal physics update below.
     }
 
     if (updatePlayer(state.player, state.input, deltaTime)) onEvent('jump');

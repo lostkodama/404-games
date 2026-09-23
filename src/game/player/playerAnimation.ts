@@ -1,4 +1,4 @@
-import { FALL_FRAME, JUMP_FRAME, RUN_FRAME_DURATION, HIT_FRAME, RUN_FRAMES } from '../constants';
+import { IDLE_FRAME, FALL_FRAME, JUMP_FRAME, RUN_FRAME_DURATION, HIT_FRAME, RUN_FRAMES } from '../constants';
 import type { Player } from '../types';
 
 export function updatePlayerAnimation(player: Player, deltaTime: number) {
@@ -10,6 +10,10 @@ export function updatePlayerAnimation(player: Player, deltaTime: number) {
     }
 
     switch (player.state) {
+        case 'idle':
+            player.frame = IDLE_FRAME;
+            return;
+
         case 'jumping':
             player.frame = JUMP_FRAME;
             return;
