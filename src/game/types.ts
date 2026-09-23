@@ -77,6 +77,7 @@ export interface ObstacleState {
 }
 
 export interface GameData extends ObstacleState {
+    restartCooldown: number;
     gameState: GameState;
     player: Player;
     input: InputState;

@@ -1,5 +1,6 @@
 import {
     GAME_WIDTH,
+    RESTART_COOLDOWN_SECONDS,
     HIT_FRAME,
     INITIAL_WORLD_SPEED,
     MAX_DELTA_TIME,
@@ -23,6 +24,7 @@ type OnGameEvent = (event: GameEvent) => void;
 export function createGameState(): GameData {
     return {
         gameState: 'ready',
+        restartCooldown: 0,
         player: createPlayer(),
         input: createInput(),
         obstacles: [],
@@ -63,6 +65,7 @@ function updateDifficulty(state: GameData) {
 
 function gameOver(state: GameData) {
     state.gameState = 'gameOver';
+    state.restartCooldown = RESTART_COOLDOWN_SECONDS;
     state.player.state = 'hit';
     state.player.frame = HIT_FRAME; // Added here because we are updating the animation before collision
 }
@@ -90,6 +93,7 @@ function updateGroundMarker(state: GameData, deltaTime: number) {
 }
 
 export function resetGame(state: GameData) {
+    state.restartCooldown = 0;
     state.distance = 0;
     state.worldSpeed = INITIAL_WORLD_SPEED; // will be reset even without
 
@@ -101,16 +105,26 @@ export function resetGame(state: GameData) {
 
 export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent = () => {}) {
     if (state.gameState === 'gameOver') {
-        if (state.input.restartPressed) {
-            resetGame(state);
-            onEvent('start');
+        if (state.restartCooldown > 0) {
+            state.restartCooldown = Math.max(0, state.restartCooldown - deltaTime);
+            // Discard even the input on the frame that reaches zero.
+            // Restart requires a new action after the prompt becomes available.
+            resetInput(state.input);
+            return;
+        }
+        if (!state.input.restartPressed) {
+            resetInput(state.input);
+            return;
         }
 
-        resetInput(state.input);
-        return;
+        resetGame(state);
+        onEvent('start');
+        // The accepted restart action also jumps through normal physics below.
+        state.input.jumpPressed = true;
     }
 
-    if (state.gameState === 'ready') {
+    const isInitialStart = state.gameState === 'ready';
+    if (isInitialStart) {
         if (!state.input.jumpPressed) {
             resetInput(state.input);
             return;
@@ -120,7 +134,9 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
         // Keep jumpPressed for the normal physics update below.
     }
 
-    if (updatePlayer(state.player, state.input, deltaTime)) onEvent('jump');
+    const jumped = updatePlayer(state.player, state.input, deltaTime);
+    // The initial jump already has the start sound; subsequent jumps keep their effect.
+    if (jumped && !isInitialStart) onEvent('jump');
     updatePlayerAnimation(state.player, deltaTime);
 
     updateObstacles(state, state.worldSpeed, deltaTime);

@@ -8,7 +8,7 @@ const { createGameState, resetGame, update } = await server.ssrLoadModule('/src/
 const { createObstacle } = await server.ssrLoadModule('/src/game/obstacles/obstacles.ts');
 const { SCORE_SCALE, IDLE_FRAME, PLAYER_GROUND_Y, JUMP_VELOCITY, GRAVITY } = await server.ssrLoadModule('/src/game/constants.ts');
 
-test('initial update is silent; only a successful jump emits jump', () => {
+test('initial jump plays only start; later successful jumps play jump', () => {
     const state = createGameState();
     const events = [];
     const emit = event => events.push(event);
@@ -16,6 +16,11 @@ test('initial update is silent; only a successful jump emits jump', () => {
     assert.deepEqual(events, []);
     state.input.jumpPressed = true;
     update(state, 0.01, emit);
+    state.input.jumpPressed = true;
+    update(state, 0.01, emit);
+    assert.deepEqual(events, ['start']);
+    assert.equal(state.player.state, 'jumping');
+    for (let frame = 0; frame < 80; frame++) update(state, 0.01, emit);
     state.input.jumpPressed = true;
     update(state, 0.01, emit);
     assert.deepEqual(events, ['start', 'jump']);
@@ -34,10 +39,12 @@ test('collision emits game-over once; restart emits start once', () => {
     assert.equal(state.gameState, 'gameOver');
     update(state, 0, emit);
     assert.deepEqual(events, ['gameOver']);
+    assert.equal(state.restartCooldown, 2);
+    update(state, 2, emit);
     state.input.restartPressed = true;
     update(state, 0, emit);
     update(state, 0, emit);
-    assert.deepEqual(events, ['gameOver', 'start']);
+    assert.deepEqual(events, ['gameOver', 'start', 'jump']);
 });
 
 test('level advancement emits once and resetting the level stays silent', () => {
@@ -56,7 +63,7 @@ test('level advancement emits once and resetting the level stays silent', () => 
     state.input.restartPressed = true;
     update(state, 0, emit);
     update(state, 0, emit);
-    assert.deepEqual(events, ['levelUp', 'levelUp', 'start']);
+    assert.deepEqual(events, ['levelUp', 'levelUp', 'start', 'jump']);
 });
 
 test('ready freezes the player, world, spawning, score and difficulty', () => {
@@ -85,15 +92,17 @@ test('first jump starts immediately using normal physics, then lands and runs', 
     assert.ok(state.player.animationTime > 0);
 });
 
-test('restart returns directly to running without an automatic jump', () => {
+test('restart jumps immediately through normal physics with one input', () => {
     const state = createGameState();
     state.gameState = 'gameOver';
     state.input.restartPressed = true;
     update(state, 0.01);
     assert.equal(state.gameState, 'running');
-    assert.equal(state.player.state, 'running');
-    assert.equal(state.player.isGrounded, true);
-    assert.equal(state.player.velocityY, 0);
+    assert.equal(state.player.state, 'jumping');
+    assert.equal(state.player.isGrounded, false);
+    assert.equal(state.player.velocityY, JUMP_VELOCITY + GRAVITY * 0.01);
+    assert.equal(state.player.y, PLAYER_GROUND_Y + state.player.velocityY * 0.01);
+    assert.deepEqual(state.input, { jumpPressed: false, restartPressed: false });
 });
 
 test('idle animation uses its static frame without advancing time', async () => {
@@ -102,4 +111,53 @@ test('idle animation uses its static frame without advancing time', async () => 
     updatePlayerAnimation(state.player, 1);
     assert.equal(state.player.frame, IDLE_FRAME);
     assert.equal(state.player.animationTime, 0);
+});
+
+
+test('cooldown freezes gameplay and discards inputs, including the expiry frame', async () => {
+    const { handleKeyDown, handlePointerDown } = await server.ssrLoadModule('/src/game/input/input.ts');
+    const state = createGameState();
+    resetGame(state);
+    const obstacle = createObstacle('buildingSmall');
+    obstacle.x = state.player.x;
+    state.obstacles = [obstacle];
+    state.lastSpawnedObstacle = obstacle;
+    state.input.restartPressed = true; // stale input on the collision frame
+    update(state, 0);
+    assert.equal(state.restartCooldown, 2);
+    assert.equal(state.input.restartPressed, false);
+    const frozen = structuredClone(state);
+    const press = repeat => handleKeyDown(state.input, state.gameState, {
+        code: 'Space', repeat, preventDefault() {},
+    });
+
+    for (const remaining of [1, 0]) {
+        press(false);
+        handlePointerDown(state.input, state.gameState, { preventDefault() {} });
+        update(state, 1);
+        assert.equal(state.restartCooldown, remaining);
+        assert.equal(state.gameState, 'gameOver');
+        assert.equal(state.input.restartPressed, false);
+        assert.deepEqual({ ...state, restartCooldown: 2 }, frozen);
+    }
+    press(true); // holding the key after expiry must not restart
+    update(state, 0.05);
+    assert.equal(state.gameState, 'gameOver');
+    press(false); // a fresh press is now accepted
+    update(state, 0.05);
+    assert.equal(state.gameState, 'running');
+    assert.equal(state.restartCooldown, 0);
+});
+
+test('cooldown clamps at zero and reset clears an active cooldown', () => {
+    const state = createGameState();
+    state.gameState = 'gameOver';
+    state.restartCooldown = 0.01;
+    state.input.restartPressed = true;
+    update(state, 0.05);
+    assert.equal(state.restartCooldown, 0);
+    assert.equal(state.gameState, 'gameOver');
+    state.restartCooldown = 2;
+    resetGame(state);
+    assert.equal(state.restartCooldown, 0);
 });
