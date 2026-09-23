@@ -1,5 +1,6 @@
 import './style.css';
 import { startGame } from './game/Game';
+import { createSounds } from './audio/sounds';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
 if (!canvas) {
@@ -11,4 +12,12 @@ if (!ctx) {
     throw new Error('2D rendering context not available');
 }
 
-startGame(canvas, ctx);
+const sounds = createSounds();
+const stopGame = startGame(canvas, ctx, sounds.play, sounds.unlock);
+
+if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+        stopGame();
+        sounds.dispose();
+    });
+}

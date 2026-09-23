@@ -10,7 +10,8 @@ export function updatePlayer(player: Player, input: InputState, deltaTime: numbe
     //     state: player.state,
     // });
 
-    if (input.jumpPressed && player.isGrounded) {
+    const jumped = input.jumpPressed && player.isGrounded;
+    if (jumped) {
         player.velocityY = JUMP_VELOCITY;
         player.isGrounded = false;
         console.log('Player jump action received');
@@ -34,4 +35,5 @@ export function updatePlayer(player: Player, input: InputState, deltaTime: numbe
     } else {
         player.state = 'falling';
     }
+    return jumped;
 }

@@ -5,16 +5,16 @@ import type { Obstacle, ObstacleSegment, Player, Rect } from '../types';
 const PLAYER_HITBOXES = {
     grounded: {
         offsetX: 10,
-        offsetY: 311 * PLAYER_SCALE - 73 - CAT_BOTTOM_PADDING,
-        width: 91,
-        height: 73,
+        offsetY: 311 * PLAYER_SCALE - 50 - CAT_BOTTOM_PADDING,
+        width: 60,
+        height: 50,
     },
 
     airborne: {
         offsetX: 20,
-        offsetY: 311 * PLAYER_SCALE - 80 - CAT_BOTTOM_PADDING,
-        width: 80,
-        height: 35,
+        offsetY: 311 * PLAYER_SCALE - 50 - CAT_BOTTOM_PADDING,
+        width: 50,
+        height: 30,
     },
 } as const;
 

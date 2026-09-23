@@ -17,6 +17,9 @@ import { isPlayerCollidingWithObstacle } from './collision/collision';
 import { render } from './render/renderer';
 import { loadSprites } from './render/sprites';
 
+export type GameEvent = 'start' | 'jump' | 'gameOver' | 'levelUp';
+type OnGameEvent = (event: GameEvent) => void;
+
 export function createGameState(): GameData {
     return {
         gameState: 'running',
@@ -67,7 +70,9 @@ function gameOver(state: GameData) {
 function updateCollision(state: GameData) {
     if (isPlayerCollidingWithObstacle(state.player, state.obstacles)) {
         gameOver(state);
+        return true;
     }
+    return false;
 }
 
 function updateGroundMarker(state: GameData, deltaTime: number) {
@@ -94,17 +99,18 @@ export function resetGame(state: GameData) {
     state.gameState = 'running';
 }
 
-export function update(state: GameData, deltaTime: number) {
+export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent = () => {}) {
     if (state.gameState === 'gameOver') {
         if (state.input.restartPressed) {
             resetGame(state);
+            onEvent('start');
         }
 
         resetInput(state.input);
         return;
     }
 
-    updatePlayer(state.player, state.input, deltaTime);
+    if (updatePlayer(state.player, state.input, deltaTime)) onEvent('jump');
     updatePlayerAnimation(state.player, deltaTime);
 
     updateObstacles(state, state.worldSpeed, deltaTime);
@@ -113,20 +119,28 @@ export function update(state: GameData, deltaTime: number) {
     updateGroundMarker(state, deltaTime);
 
     // Mind the order. Should be after updating player and obstacle position.
-    updateCollision(state);
+    if (updateCollision(state)) onEvent('gameOver');
 
     if (state.gameState === 'running') {
         updateScore(state, deltaTime);
+        const previousLevel = state.difficultyLevel;
         updateDifficulty(state);
+        if (state.difficultyLevel > previousLevel) onEvent('levelUp');
     }
 
     resetInput(state.input);
 }
 
-export function startGame(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+export function startGame(
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    onEvent: OnGameEvent = () => {},
+    onInteraction: () => void = () => {},
+) {
     const state = createGameState();
     const assets = loadSprites();
     let previousTime: number | undefined;
+    let frameId: number;
 
     function gameLoop(currentTime: number) {
         if (previousTime === undefined) {
@@ -137,12 +151,16 @@ export function startGame(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext
         const deltaTime = Math.min(rawDeltaTime, MAX_DELTA_TIME);
         previousTime = currentTime;
 
-        update(state, deltaTime);
+        update(state, deltaTime, onEvent);
         render(ctx, canvas, state, assets);
 
-        requestAnimationFrame(gameLoop);
+        frameId = requestAnimationFrame(gameLoop);
     }
 
-    bindInput(canvas, state.input, () => state.gameState);
-    requestAnimationFrame(gameLoop);
+    const unbindInput = bindInput(canvas, state.input, () => state.gameState, onInteraction);
+    frameId = requestAnimationFrame(gameLoop);
+    return () => {
+        cancelAnimationFrame(frameId);
+        unbindInput();
+    };
 }
