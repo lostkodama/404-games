@@ -2,13 +2,6 @@ import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } 
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
 import type { GameData, GameState, Obstacle, Player, SpriteAssets } from '../types';
 
-export function loadSprites(): SpriteAssets {
-    const assets: SpriteAssets = { catSpriteSheet: new Image(), catSpriteLoaded: false };
-    assets.catSpriteSheet.onload = () => { assets.catSpriteLoaded = true; };
-    assets.catSpriteSheet.src = '/sprites/cat-run-jump.png';
-    return assets;
-}
-
 function drawScore(ctx: CanvasRenderingContext2D, score: number) {
     ctx.save();
 
@@ -30,16 +23,40 @@ function drawBackground(ctx: CanvasRenderingContext2D) {
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 }
 
-function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[]) {
+function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], assets: SpriteAssets) {
     ctx.fillStyle = '#555';
 
     for (const obstacle of obstacles) {
-        ctx.fillRect(
-            obstacle.x,
-            obstacle.y,
-            obstacle.width,
-            obstacle.height
-        );
+        for (const segment of obstacle.segments) {
+            const x = obstacle.x + segment.offsetX;
+            const y = obstacle.y + obstacle.height - segment.height;
+            const sprite = assets.obstacles[segment.type];
+            const { frameWidth, frameHeight, columns } = sprite;
+
+            if (!sprite.loaded || frameWidth === null || frameHeight === null ||
+                frameWidth <= 0 || frameHeight <= 0 || columns === null || columns <= 0) {
+                ctx.fillRect(x, y, segment.width, segment.height);
+                continue;
+            }
+
+            // Fit without stretching; keep the sprite centered and grounded within
+            // the existing obstacle bounds. Buildings always use frame zero.
+            const scale = Math.min(segment.width / frameWidth, segment.height / frameHeight);
+            const width = frameWidth * scale;
+            const height = frameHeight * scale;
+            const frame = obstacle.type === 'car' ? obstacle.animationFrameIndex : 0;
+            const sourceX = (frame % columns) * frameWidth;
+            const sourceY = Math.floor(frame / columns) * frameHeight;
+
+            ctx.drawImage(
+                sprite.image,
+                sourceX, sourceY, frameWidth, frameHeight,
+                x + (segment.width - width) / 2,
+                y + segment.height - height,
+                width,
+                height
+            );
+        }
     }
 }
 
@@ -159,7 +176,7 @@ function drawPlayer(ctx: CanvasRenderingContext2D, player: Player, assets: Sprit
     drawPlayerFrame(ctx, player, assets, player.frame)
 }
 
-function drawDebugDifficulty(ctx: CanvasRenderingContext2D, worldSpeed: number, difficultyLevel: number, obstacleSpawnInterval: number) {
+function drawDebugDifficulty(ctx: CanvasRenderingContext2D, worldSpeed: number, difficultyLevel: number, nextObstacleGap: number) {
     ctx.save();
 
     ctx.fillStyle = '#171717';
@@ -179,7 +196,7 @@ function drawDebugDifficulty(ctx: CanvasRenderingContext2D, worldSpeed: number, 
     );
 
     ctx.fillText(
-        `Spawn: ${obstacleSpawnInterval.toFixed(2)}`,
+        `Gap: ${nextObstacleGap}px`,
         20,
         89
     );
@@ -191,16 +208,12 @@ function drawDebugBounds(ctx: CanvasRenderingContext2D, player: Player, obstacle
     const playerBounds =
         getPlayerBounds(player);
 
-    for (const obstacle of obstacles) {
-        const bounds =
-            getObstacleBounds(obstacle);
+    ctx.strokeStyle = 'blue';
 
-        ctx.strokeRect(
-            bounds.x,
-            bounds.y,
-            bounds.width,
-            bounds.height
-        );
+    for (const obstacle of obstacles) {
+        for (const bounds of getObstacleBounds(obstacle)) {
+            ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        }
     }
 
     ctx.strokeStyle = 'red';
@@ -223,11 +236,11 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawGround(ctx); // worlds
     drawGroundMarker(ctx, state.groundMarker);
 
-    drawObstacles(ctx, state.obstacles); // game objects
+    drawObstacles(ctx, state.obstacles, assets); // game objects
     drawPlayer(ctx, state.player, assets);
 
-    drawDebugBounds(ctx, state.player, state.obstacles);
-    drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.obstacleSpawnInterval);
+    //drawDebugBounds(ctx, state.player, state.obstacles);
+    drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
     drawForeground(ctx); // foreground
     drawScore(ctx, state.score);

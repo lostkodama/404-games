@@ -28,11 +28,11 @@ export const PLAYER_SCALE = 0.4
 
 export const GRAVITY = 1300;
 
-export const JUMP_VELOCITY = -560;
+export const JUMP_VELOCITY = -520;
 
 export const MAX_DELTA_TIME = 0.05;
 
-export const INITIAL_WORLD_SPEED = 220;
+export const INITIAL_WORLD_SPEED = 260;
 
 export const MAX_WORLD_SPEED = 800;
 
@@ -40,16 +40,6 @@ export const SPEED_INCREASE_PER_LEVEL = 20;
 
 export const OBSTACLE_SPAWN_X =
     GAME_WIDTH + 80;
-
-export const OBSTACLE_WIDTH = 40;
-
-export const OBSTACLE_HEIGHT = 55;
-
-export const INITIAL_SPAWN_INTERVAL = 2;
-
-export const MIN_SPAWN_INTERVAL = 1.3;
-
-export const SPAWN_INTERVAL_REDUCTION = 0.1;
 
 export const SCORE_SCALE = 0.05
 
