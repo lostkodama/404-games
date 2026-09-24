@@ -99,6 +99,7 @@ export function resetGame(state: GameData) {
     state.restartCooldown = 0;
     state.distance = 0;
     state.worldSpeed = INITIAL_WORLD_SPEED; // will be reset even without
+    state.difficultyLevel = 0;
 
     resetPlayer(state.player);
     resetObstacles(state);
@@ -170,9 +171,17 @@ export function startGame(
     const state = createGameState();
     const assets = loadSprites();
     let previousTime: number | undefined;
-    let frameId: number;
+    let frameId: number | undefined;
+
+    let isSuspended = false;
 
     function gameLoop(currentTime: number) {
+        frameId = undefined
+
+        if (isSuspended) {
+            return;
+        }
+
         if (previousTime === undefined) {
             previousTime = currentTime;
         }
@@ -187,10 +196,42 @@ export function startGame(
         frameId = requestAnimationFrame(gameLoop);
     }
 
+    function handleVisibilityChange() {
+        if (document.visibilityState === 'hidden') {
+            isSuspended = true;
+            if (frameId !== undefined) {
+                cancelAnimationFrame(frameId);
+                frameId = undefined;
+            }
+
+            return
+        }
+
+        isSuspended = false;
+        previousTime = undefined;
+
+        if (frameId === undefined) {
+            frameId = requestAnimationFrame(gameLoop);
+        }
+    }
+
+    document.addEventListener(
+        'visibilitychange',
+        handleVisibilityChange
+    );
+
     const unbindInput = bindInput(canvas, state.input, () => state.gameState, onInteraction);
     frameId = requestAnimationFrame(gameLoop);
     return () => {
-        cancelAnimationFrame(frameId);
+        if (frameId !== undefined) {
+            cancelAnimationFrame(frameId);
+            frameId = undefined;
+        }
         unbindInput();
+
+        document.removeEventListener(
+            'visibilitychange',
+            handleVisibilityChange
+        );
     };
 }
