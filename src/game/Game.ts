@@ -32,6 +32,7 @@ export function createGameState(): GameData {
         lastSpawnedObstacle: null,
         groundMarker: { x: 300, width: 40 },
         score: 0,
+        highScore: 0,
         distance: 0,
         difficultyLevel: 0,
         worldSpeed: INITIAL_WORLD_SPEED,
@@ -64,6 +65,7 @@ function updateDifficulty(state: GameData) {
 }
 
 function gameOver(state: GameData) {
+    state.highScore = Math.max(state.highScore, state.score);
     state.gameState = 'gameOver';
     state.restartCooldown = RESTART_COOLDOWN_SECONDS;
     state.player.state = 'hit';
@@ -93,6 +95,7 @@ function updateGroundMarker(state: GameData, deltaTime: number) {
 }
 
 export function resetGame(state: GameData) {
+    state.score = 0;
     state.restartCooldown = 0;
     state.distance = 0;
     state.worldSpeed = INITIAL_WORLD_SPEED; // will be reset even without
@@ -104,6 +107,7 @@ export function resetGame(state: GameData) {
 }
 
 export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent = () => {}) {
+    let isInitialStart = state.gameState === 'ready';
     if (state.gameState === 'gameOver') {
         if (state.restartCooldown > 0) {
             state.restartCooldown = Math.max(0, state.restartCooldown - deltaTime);
@@ -118,13 +122,13 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
         }
 
         resetGame(state);
+        isInitialStart = true;
         onEvent('start');
         // The accepted restart action also jumps through normal physics below.
         state.input.jumpPressed = true;
     }
 
-    const isInitialStart = state.gameState === 'ready';
-    if (isInitialStart) {
+    if (state.gameState === 'ready') {
         if (!state.input.jumpPressed) {
             resetInput(state.input);
             return;
@@ -135,7 +139,7 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
     }
 
     const jumped = updatePlayer(state.player, state.input, deltaTime);
-    // The initial jump already has the start sound; subsequent jumps keep their effect.
+    // Starting and restarting already play the start sound; later jumps keep their effect.
     if (jumped && !isInitialStart) onEvent('jump');
     updatePlayerAnimation(state.player, deltaTime);
 
