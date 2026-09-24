@@ -17,6 +17,7 @@ import { resetObstacles, updateObstacles, updateObstacleSpawning } from './obsta
 import { isPlayerCollidingWithObstacle } from './collision/collision';
 import { render } from './render/renderer';
 import { loadSprites } from './render/sprites';
+import { debugGameState } from './debug/debugGameState';
 
 export type GameEvent = 'start' | 'jump' | 'gameOver' | 'levelUp';
 type OnGameEvent = (event: GameEvent) => void;
@@ -70,6 +71,7 @@ function gameOver(state: GameData) {
     state.restartCooldown = RESTART_COOLDOWN_SECONDS;
     state.player.state = 'hit';
     state.player.frame = HIT_FRAME; // Added here because we are updating the animation before collision
+    debugGameState('enter game over', state);
 }
 
 function updateCollision(state: GameData) {
@@ -95,6 +97,7 @@ function updateGroundMarker(state: GameData, deltaTime: number) {
 }
 
 export function resetGame(state: GameData) {
+    debugGameState('before reset', state);
     state.score = 0;
     state.restartCooldown = 0;
     state.distance = 0;
@@ -105,6 +108,7 @@ export function resetGame(state: GameData) {
     resetObstacles(state);
 
     state.gameState = 'running';
+    debugGameState('after reset', state);
 }
 
 export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent = () => {}) {
@@ -169,6 +173,7 @@ export function startGame(
     onInteraction: () => void = () => {},
 ) {
     const state = createGameState();
+    debugGameState('initial state', state);
     const assets = loadSprites();
     let previousTime: number | undefined;
     let frameId: number | undefined;
@@ -198,6 +203,7 @@ export function startGame(
 
     function handleVisibilityChange() {
         if (document.visibilityState === 'hidden') {
+            if (!isSuspended) debugGameState('browser suspend', state);
             isSuspended = true;
             if (frameId !== undefined) {
                 cancelAnimationFrame(frameId);
@@ -207,6 +213,7 @@ export function startGame(
             return
         }
 
+        if (isSuspended) debugGameState('browser resume', state);
         isSuspended = false;
         previousTime = undefined;
 
