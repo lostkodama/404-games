@@ -20,7 +20,7 @@ function prepareCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement)
     ctx.imageSmoothingQuality = 'high';
 }
 
-function drawScore(ctx: CanvasRenderingContext2D, score: number) {
+function drawScore(ctx: CanvasRenderingContext2D, highScore: number, score: number) {
     ctx.save();
 
     ctx.fillStyle = '#171717';
@@ -28,7 +28,7 @@ function drawScore(ctx: CanvasRenderingContext2D, score: number) {
     ctx.textAlign = 'right';
 
     ctx.fillText(
-        score.toString(),
+        `HI ${highScore} ${score}`,
         GAME_WIDTH - 20,
         30
     );
@@ -264,7 +264,7 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
     drawForeground(ctx); // foreground
-    drawScore(ctx, state.score);
+    drawScore(ctx, state.highScore, state.score);
 
     drawGameOver(ctx, state.gameState, state.restartCooldown);
 }

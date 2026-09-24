@@ -83,6 +83,7 @@ export interface GameData extends ObstacleState {
     input: InputState;
     groundMarker: { x: number; width: number };
     score: number;
+    highScore: number;
     distance: number;
     difficultyLevel: number;
     worldSpeed: number;

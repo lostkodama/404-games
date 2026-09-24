@@ -44,7 +44,7 @@ test('collision emits game-over once; restart emits start once', () => {
     state.input.restartPressed = true;
     update(state, 0, emit);
     update(state, 0, emit);
-    assert.deepEqual(events, ['gameOver', 'start', 'jump']);
+    assert.deepEqual(events, ['gameOver', 'start']);
 });
 
 test('level advancement emits once and resetting the level stays silent', () => {
@@ -63,7 +63,7 @@ test('level advancement emits once and resetting the level stays silent', () => 
     state.input.restartPressed = true;
     update(state, 0, emit);
     update(state, 0, emit);
-    assert.deepEqual(events, ['levelUp', 'levelUp', 'start', 'jump']);
+    assert.deepEqual(events, ['levelUp', 'levelUp', 'start']);
 });
 
 test('ready freezes the player, world, spawning, score and difficulty', () => {
@@ -160,4 +160,67 @@ test('cooldown clamps at zero and reset clears an active cooldown', () => {
     state.restartCooldown = 2;
     resetGame(state);
     assert.equal(state.restartCooldown, 0);
+});
+
+test('restart plays only start, then later jumps play jump again', () => {
+    const state = createGameState();
+    state.gameState = 'gameOver';
+    state.input.restartPressed = true;
+    const events = [];
+    const emit = event => events.push(event);
+    update(state, 0.01, emit);
+    assert.deepEqual(events, ['start']);
+    assert.equal(state.player.state, 'jumping');
+    for (let frame = 0; frame < 80; frame++) update(state, 0.01, emit);
+    state.input.jumpPressed = true;
+    update(state, 0.01, emit);
+    assert.deepEqual(events, ['start', 'jump']);
+});
+
+test('high score records completed runs only and survives restart, but not new state', () => {
+    const state = createGameState();
+    assert.equal(state.highScore, 0);
+    resetGame(state);
+    const finishRun = () => {
+        const obstacle = createObstacle('buildingSmall');
+        obstacle.x = state.player.x;
+        state.obstacles = [obstacle];
+        state.lastSpawnedObstacle = obstacle;
+        update(state, 0);
+        assert.equal(state.gameState, 'gameOver');
+    };
+
+    state.distance = 50 / SCORE_SCALE;
+    update(state, 0);
+    assert.equal(state.highScore, 0);
+    finishRun();
+    assert.equal(state.highScore, 50);
+    update(state, 2);
+    state.input.restartPressed = true;
+    update(state, 0);
+    assert.equal(state.score, 0);
+    assert.equal(state.distance, 0);
+    assert.equal(state.highScore, 50);
+
+    for (const score of [48, 50, 51, 52]) {
+        state.distance = score / SCORE_SCALE;
+        update(state, 0);
+        assert.equal(state.score, score);
+        assert.equal(state.highScore, 50);
+    }
+    finishRun();
+    assert.equal(state.highScore, 52);
+    // Changing score here proves game-over updates do not recommit it.
+    state.score = 99;
+    update(state, 0.05);
+    assert.equal(state.highScore, 52);
+
+    resetGame(state);
+    assert.equal(state.score, 0);
+    assert.equal(state.highScore, 52);
+    state.distance = 40 / SCORE_SCALE;
+    update(state, 0);
+    finishRun();
+    assert.equal(state.highScore, 52);
+    assert.equal(createGameState().highScore, 0);
 });
