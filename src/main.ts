@@ -2,6 +2,9 @@ import './style.css';
 import { startGame } from './game/Game';
 import { createSounds } from './audio/sounds';
 
+// Canvas-only fonts need an explicit load; keep the game usable if loading fails.
+void document.fonts.load('700 32px "Space Grotesk"').catch(() => {});
+
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
 if (!canvas) {
     throw new Error('Game canvas not found');

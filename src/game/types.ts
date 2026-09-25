@@ -1,3 +1,5 @@
+import type {GroundDetail} from "./environment/ground.ts";
+
 export type GameAction =
     | 'jump'
     | 'pause'
@@ -20,6 +22,12 @@ export type Rect = {
     y: number;
     width: number;
     height: number;
+};
+
+export type Cloud = {
+    x: number;
+    y: number;
+    scale: number;
 };
 
 export type ObstacleType =
@@ -76,17 +84,19 @@ export interface ObstacleState {
     lastSpawnedObstacle: Obstacle | null;
 }
 
+// TODO: Consider composition for GameData and ObstacleState?
 export interface GameData extends ObstacleState {
     restartCooldown: number;
     gameState: GameState;
     player: Player;
     input: InputState;
-    groundMarker: { x: number; width: number };
+    groundDetails: GroundDetail[];
     score: number;
     highScore: number;
     distance: number;
     difficultyLevel: number;
     worldSpeed: number;
+    clouds: Cloud[];
 }
 
 export interface ObstacleSprite {

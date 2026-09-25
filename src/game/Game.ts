@@ -1,5 +1,4 @@
 import {
-    GAME_WIDTH,
     RESTART_COOLDOWN_SECONDS,
     HIT_FRAME,
     INITIAL_WORLD_SPEED,
@@ -18,6 +17,8 @@ import { isPlayerCollidingWithObstacle } from './collision/collision';
 import { render } from './render/renderer';
 import { loadSprites } from './render/sprites';
 import { debugGameState } from './debug/debugGameState';
+import {createClouds, updateClouds} from "./environment/cloud.ts";
+import {createGroundDetails, updateGroundDetails} from "./environment/ground.ts";
 
 export type GameEvent = 'start' | 'jump' | 'gameOver' | 'levelUp';
 type OnGameEvent = (event: GameEvent) => void;
@@ -31,12 +32,13 @@ export function createGameState(): GameData {
         obstacles: [],
         nextObstacleGap: 0, // No previous obstacle; the first spawn chooses its gap.
         lastSpawnedObstacle: null,
-        groundMarker: { x: 300, width: 40 },
+        groundDetails: createGroundDetails(),
         score: 0,
         highScore: 0,
         distance: 0,
         difficultyLevel: 0,
         worldSpeed: INITIAL_WORLD_SPEED,
+        clouds: createClouds(),
     };
 }
 
@@ -80,20 +82,6 @@ function updateCollision(state: GameData) {
         return true;
     }
     return false;
-}
-
-function updateGroundMarker(state: GameData, deltaTime: number) {
-    state.groundMarker.x -=
-        state.worldSpeed * deltaTime;
-
-    if (
-        state.groundMarker.x +
-        state.groundMarker.width <
-        0
-    ) {
-        state.groundMarker.x =
-            GAME_WIDTH;
-    }
 }
 
 export function resetGame(state: GameData) {
@@ -151,7 +139,13 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
     updateObstacles(state, state.worldSpeed, deltaTime);
     updateObstacleSpawning(state, state.difficultyLevel);
 
-    updateGroundMarker(state, deltaTime);
+    updateClouds(
+        state.clouds,
+        state.worldSpeed,
+        deltaTime
+    );
+
+    updateGroundDetails(state.groundDetails, state.worldSpeed, deltaTime);
 
     // Mind the order. Should be after updating player and obstacle position.
     if (updateCollision(state)) onEvent('gameOver');

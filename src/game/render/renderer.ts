@@ -1,8 +1,10 @@
 import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from '../constants';
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
-import type { GameData, GameState, Obstacle, Player, SpriteAssets } from '../types';
+import type {Cloud, GameData, GameState, Obstacle, Player, SpriteAssets} from '../types';
+import type {GroundDetail} from "../environment/ground.ts";
 
-const SHOW_COLLISION_BOUNDS = true;
+const SHOW_COLLISION_BOUNDS = false;
+const SHOW_DIFFICULTY_STATS = false
 
 function prepareCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
     const pixelRatio = window.devicePixelRatio || 1;
@@ -24,7 +26,7 @@ function drawScore(ctx: CanvasRenderingContext2D, highScore: number, score: numb
     ctx.save();
 
     ctx.fillStyle = '#171717';
-    ctx.font = '20px monospace';
+    ctx.font = '16px monospace';
     ctx.textAlign = 'right';
 
     ctx.fillText(
@@ -80,53 +82,12 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
     }
 }
 
-function drawGround(ctx: CanvasRenderingContext2D) {
-    ctx.strokeStyle = '#171717';
-    ctx.lineWidth = 2;
-
-    ctx.beginPath();
-    ctx.moveTo(0, GROUND_Y);
-    ctx.lineTo(GAME_WIDTH, GROUND_Y);
-    ctx.stroke();
-}
-
-function drawGroundMarker(ctx: CanvasRenderingContext2D, groundMarker: GameData['groundMarker']) {
-    ctx.strokeStyle = '#aaa';
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        groundMarker.x,
-        GROUND_Y + 10
-    );
-
-    ctx.lineTo(
-        groundMarker.x +
-        groundMarker.width,
-        GROUND_Y + 10
-    );
-
-    ctx.stroke();
-}
-
-function drawForeground(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = '#d4d4d4';
-
-    ctx.fillRect(
-        0,
-        GROUND_Y + 20,
-        GAME_WIDTH,
-        GAME_HEIGHT - GROUND_Y - 20
-    );
-}
-
 function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, restartCooldown: number) {
     if (gameState !== 'gameOver') {
         return;
     }
 
-    ctx.fillStyle =
-        'rgba(255, 255, 255, 0.75)';
+    ctx.fillStyle = 'transparent'
 
     ctx.fillRect(
         0,
@@ -139,21 +100,21 @@ function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, resta
     ctx.textAlign = 'center';
 
     ctx.font =
-        'bold 32px sans-serif';
+        '700 24px "Space Grotesk", sans-serif';
 
     ctx.fillText(
-        'Game Over',
+        'GAME OVER',
         GAME_WIDTH / 2,
-        170
+        GAME_HEIGHT / 2
     );
 
     ctx.font =
-        '16px sans-serif';
+        '14px Space Grotesk, sans-serif';
 
     ctx.fillText(
-        restartCooldown > 0 ? Math.ceil(restartCooldown).toString() : 'Press Space or tap to restart',
+        restartCooldown > 0 ? Math.ceil(restartCooldown).toString() : 'Restart',
         GAME_WIDTH / 2,
-        210
+        GAME_HEIGHT / 2 + 20
     );
 }
 
@@ -254,17 +215,135 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
 
     drawBackground(ctx); // background
 
-    drawGround(ctx); // worlds
-    drawGroundMarker(ctx, state.groundMarker);
+    drawClouds(ctx, state.clouds) // worlds
+    drawGround(ctx);
+    drawGroundDetails(ctx, state.groundDetails)
 
     drawObstacles(ctx, state.obstacles, assets); // game objects
     drawPlayer(ctx, state.player, assets);
 
+    // TODO: MXN_ undo commented draw + add settings
     if (SHOW_COLLISION_BOUNDS) drawDebugBounds(ctx, state.player, state.obstacles);
-    drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
+    if(SHOW_DIFFICULTY_STATS) drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
-    drawForeground(ctx); // foreground
     drawScore(ctx, state.highScore, state.score);
 
     drawGameOver(ctx, state.gameState, state.restartCooldown);
+}
+
+// TODO: MXN_ check why draw is in renderer rather than belonging to the objct (player, cloud, etc)
+function drawCloud(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    scale: number
+) {
+    ctx.save();
+
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    ctx.beginPath();
+
+    ctx.moveTo(0, 16);
+
+    ctx.arc(
+        12,
+        16,
+        12,
+        Math.PI,
+        0
+    );
+
+    ctx.arc(
+        28,
+        8,
+        16,
+        Math.PI,
+        0
+    );
+
+    ctx.arc(
+        46,
+        16,
+        12,
+        Math.PI,
+        0
+    );
+
+    ctx.lineTo(46, 22);
+    ctx.lineTo(0, 22);
+    ctx.closePath();
+
+    ctx.globalAlpha = 0.75 ;
+    ctx.strokeStyle = '#171717';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function drawClouds(
+    ctx: CanvasRenderingContext2D,
+    clouds: Cloud[]
+) {
+    for (const cloud of clouds) {
+        drawCloud(
+            ctx,
+            cloud.x,
+            cloud.y,
+            cloud.scale
+        );
+    }
+}
+
+function drawGround(
+    ctx: CanvasRenderingContext2D
+) {
+    const groundY = GROUND_Y;
+
+    ctx.save();
+
+    ctx.strokeStyle = '#171717';
+
+    // Strong gameplay baseline
+    ctx.lineWidth = 1 ;
+
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(GAME_WIDTH, groundY);
+    ctx.stroke();
+
+
+
+    ctx.restore();
+}
+
+function drawGroundDetails(
+    ctx: CanvasRenderingContext2D,
+    details: GroundDetail[]
+) {
+    ctx.save();
+
+    ctx.strokeStyle = '#171717';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.35;
+
+    for (const detail of details) {
+        ctx.beginPath();
+
+        ctx.moveTo(
+            detail.x,
+            GROUND_Y + 2
+        );
+
+        ctx.lineTo(
+            detail.x,
+            GROUND_Y + 8
+        );
+
+        ctx.stroke();
+    }
+
+    ctx.restore();
 }
