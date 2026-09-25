@@ -30,13 +30,18 @@ function drawScore(ctx: CanvasRenderingContext2D, highScore: number, score: numb
     ctx.textAlign = 'right';
 
     ctx.fillText(
-        `HI ${highScore} ${score}`,
+        `HI ${formatScore(highScore)} ${formatScore(score)}`,
         GAME_WIDTH - 20,
         30
     );
 
     ctx.restore();
 }
+
+function formatScore(score: number, digits = 4): string {
+    return String(score).padStart(digits, '0');
+}
+
 
 function drawBackground(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = '#f7f7f7';
