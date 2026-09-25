@@ -1,20 +1,20 @@
-import { CAT_BOTTOM_PADDING, PLAYER_SCALE } from '../constants';
+import {CAT_BOTTOM_PADDING, CAT_FRAME_HEIGHT, PLAYER_SCALE} from '../constants';
 import { OBSTACLE_CONFIG } from '../obstacles/obstacleConfig';
 import type { Obstacle, ObstacleSegment, Player, Rect } from '../types';
 
 const PLAYER_HITBOXES = {
     grounded: {
         offsetX: 10,
-        offsetY: 311 * PLAYER_SCALE - 50 - CAT_BOTTOM_PADDING,
+        offsetY: CAT_FRAME_HEIGHT * PLAYER_SCALE - 50 - CAT_BOTTOM_PADDING,
         width: 60,
         height: 50,
     },
 
     airborne: {
         offsetX: 20,
-        offsetY: 311 * PLAYER_SCALE - 50 - CAT_BOTTOM_PADDING,
+        offsetY: CAT_FRAME_HEIGHT * PLAYER_SCALE - 55 - CAT_BOTTOM_PADDING,
         width: 50,
-        height: 30,
+        height: 27,
     },
 } as const;
 

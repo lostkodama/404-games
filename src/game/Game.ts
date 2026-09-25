@@ -1,6 +1,5 @@
 import {
     RESTART_COOLDOWN_SECONDS,
-    HIT_FRAME,
     INITIAL_WORLD_SPEED,
     MAX_DELTA_TIME,
     MAX_WORLD_SPEED,
@@ -71,8 +70,10 @@ function gameOver(state: GameData) {
     state.highScore = Math.max(state.highScore, state.score);
     state.gameState = 'gameOver';
     state.restartCooldown = RESTART_COOLDOWN_SECONDS;
+    state.player.hitPose = state.player.isGrounded ? 'ground' : 'airborne';
     state.player.state = 'hit';
-    state.player.frame = HIT_FRAME; // Added here because we are updating the animation before collision
+    // Collision follows animation in update(); select the frozen hit frame now.
+    updatePlayerAnimation(state.player, 0);
     debugGameState('enter game over', state);
 }
 
@@ -132,10 +133,11 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
     }
 
     const jumped = updatePlayer(state.player, state.input, deltaTime);
+
     // Starting and restarting already play the start sound; later jumps keep their effect.
     if (jumped && !isInitialStart) onEvent('jump');
-    updatePlayerAnimation(state.player, deltaTime);
 
+    updatePlayerAnimation(state.player, deltaTime);
     updateObstacles(state, state.worldSpeed, deltaTime);
     updateObstacleSpawning(state, state.difficultyLevel);
 

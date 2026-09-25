@@ -1,4 +1,4 @@
-import { IDLE_FRAME, FALL_FRAME, JUMP_FRAME, RUN_FRAME_DURATION, HIT_FRAME, RUN_FRAMES } from '../constants';
+import { IDLE_FRAME, FALL_FRAME, JUMP_FRAME, RUN_FRAME_DURATION, HIT_GROUND_FRAME, HIT_AIRBORNE_FRAME, RUN_FRAMES } from '../constants';
 import type { Player } from '../types';
 
 export function updatePlayerAnimation(player: Player, deltaTime: number) {
@@ -23,7 +23,7 @@ export function updatePlayerAnimation(player: Player, deltaTime: number) {
             return;
 
         case 'hit':
-            player.frame = HIT_FRAME;
+            player.frame = player.hitPose === 'airborne' ? HIT_AIRBORNE_FRAME : HIT_GROUND_FRAME;
             return;
 
         case 'running':

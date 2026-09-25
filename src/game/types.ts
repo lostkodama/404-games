@@ -63,7 +63,10 @@ export type Obstacle = {
     }
 );
 
+export type HitPose = 'ground' | 'airborne' | null;
+
 export interface Player extends Rect {
+    hitPose: HitPose;
     frame: number;
     velocityY: number;
     isGrounded: boolean;

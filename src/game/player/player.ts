@@ -9,6 +9,7 @@ export function createPlayer(): Player {
         height: 311 * PLAYER_SCALE,
 
         frame: IDLE_FRAME,
+        hitPose: null,
 
         velocityY: 0,
         isGrounded: true,
@@ -22,6 +23,7 @@ export function createPlayer(): Player {
 }
 
 export function resetPlayer(player: Player) {
+    player.hitPose = null;
     player.x = 100;
     player.y = PLAYER_GROUND_Y;
 

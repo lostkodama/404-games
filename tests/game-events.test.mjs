@@ -6,7 +6,7 @@ const server = await createServer({ server: { middlewareMode: true, hmr: false, 
 after(() => server.close());
 const { createGameState, resetGame, update } = await server.ssrLoadModule('/src/game/Game.ts');
 const { createObstacle } = await server.ssrLoadModule('/src/game/obstacles/obstacles.ts');
-const { SCORE_SCALE, IDLE_FRAME, PLAYER_GROUND_Y, JUMP_VELOCITY, GRAVITY } = await server.ssrLoadModule('/src/game/constants.ts');
+const { SCORE_SCALE, IDLE_FRAME, PLAYER_GROUND_Y, JUMP_VELOCITY, GRAVITY, HIT_GROUND_FRAME, HIT_AIRBORNE_FRAME } = await server.ssrLoadModule('/src/game/constants.ts');
 
 test('initial jump plays only start; later successful jumps play jump', () => {
     const state = createGameState();
@@ -224,3 +224,37 @@ test('high score records completed runs only and survives restart, but not new s
     assert.equal(state.highScore, 52);
     assert.equal(createGameState().highScore, 0);
 });
+
+for (const [pose, velocity, frame] of [
+    ['ground', 0, HIT_GROUND_FRAME],
+    ['airborne', -100, HIT_AIRBORNE_FRAME],
+    ['airborne', 100, HIT_AIRBORNE_FRAME],
+]) {
+    test(`collision captures ${pose} hit pose (velocity ${velocity}) and freezes it`, () => {
+        const state = createGameState();
+        assert.equal(state.player.hitPose, null);
+        resetGame(state);
+        if (pose === 'airborne') {
+            state.player.isGrounded = false;
+            state.player.y -= 5;
+            state.player.velocityY = velocity;
+        }
+        const obstacle = createObstacle('buildingLarge');
+        obstacle.x = state.player.x;
+        state.obstacles = [obstacle];
+        state.lastSpawnedObstacle = obstacle;
+        const y = state.player.y;
+        update(state, 0);
+        assert.equal(state.gameState, 'gameOver');
+        assert.equal(state.player.state, 'hit');
+        assert.equal(state.player.hitPose, pose);
+        assert.equal(state.player.frame, frame);
+        assert.equal(state.player.velocityY, velocity);
+        update(state, 0.05);
+        assert.equal(state.player.y, y);
+        assert.equal(state.player.frame, frame);
+        resetGame(state);
+        assert.equal(state.player.hitPose, null);
+        assert.equal(state.player.state, 'running');
+    });
+}

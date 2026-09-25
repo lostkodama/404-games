@@ -19,9 +19,11 @@ export const IDLE_FRAME = RUN_FRAMES[0];
 
 export const JUMP_FRAME = 12;
 
-export const FALL_FRAME = 13;
+export const FALL_FRAME = 12;
 
-export const HIT_FRAME = 14;
+export const HIT_GROUND_FRAME = 15;
+
+export const HIT_AIRBORNE_FRAME = 12;
 
 export const RUN_ANIMATION_FPS = 11;
 
