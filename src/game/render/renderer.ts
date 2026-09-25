@@ -3,7 +3,7 @@ import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
 import type {Cloud, GameData, GameState, Obstacle, Player, SpriteAssets} from '../types';
 import type {GroundDetail} from "../environment/ground.ts";
 
-const SHOW_COLLISION_BOUNDS = false;
+const SHOW_COLLISION_BOUNDS = false
 const SHOW_DIFFICULTY_STATS = false
 
 function prepareCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
@@ -51,7 +51,16 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
         for (const segment of obstacle.segments) {
             const x = obstacle.x + segment.offsetX;
             const y = obstacle.y + obstacle.height - segment.height;
+
             const sprite = assets.obstacles[segment.type];
+
+            if (sprite == null) {
+                if(segment.type == 'buildingSmall' || segment.type == 'buildingLarge') {
+                    drawBuilding(ctx, x, y, segment.width, segment.height)
+                }
+                continue;
+            }
+
             const { frameWidth, frameHeight, columns } = sprite;
 
             if (!sprite.loaded || frameWidth === null || frameHeight === null ||
@@ -80,6 +89,31 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
             );
         }
     }
+}
+
+function drawBuilding(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+) {
+    ctx.save()
+
+    ctx.fillStyle = '#414141';
+    ctx.fillRect(x, y, width, height);
+
+    const roofWidth = width * 0.4;
+    const roofHeight = 6;
+
+    ctx.fillRect(
+        x + (width - roofWidth) / 2,
+        y - roofHeight,
+        roofWidth,
+        roofHeight
+    );
+
+    ctx.restore();
 }
 
 function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, restartCooldown: number) {
@@ -222,7 +256,6 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawObstacles(ctx, state.obstacles, assets); // game objects
     drawPlayer(ctx, state.player, assets);
 
-    // TODO: MXN_ undo commented draw + add settings
     if (SHOW_COLLISION_BOUNDS) drawDebugBounds(ctx, state.player, state.obstacles);
     if(SHOW_DIFFICULTY_STATS) drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
@@ -231,7 +264,6 @@ export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement,
     drawGameOver(ctx, state.gameState, state.restartCooldown);
 }
 
-// TODO: MXN_ check why draw is in renderer rather than belonging to the objct (player, cloud, etc)
 function drawCloud(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -276,9 +308,9 @@ function drawCloud(
     ctx.closePath();
 
     ctx.globalAlpha = 0.75 ;
-    ctx.strokeStyle = '#171717';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.fillStyle = '#171717';
+    ctx.globalAlpha = 0.35;
+    ctx.fill();
 
     ctx.restore();
 }
@@ -304,7 +336,7 @@ function drawGround(
 
     ctx.save();
 
-    ctx.strokeStyle = '#171717';
+    ctx.strokeStyle = '#343333';
 
     // Strong gameplay baseline
     ctx.lineWidth = 1 ;
@@ -313,7 +345,6 @@ function drawGround(
     ctx.moveTo(0, groundY);
     ctx.lineTo(GAME_WIDTH, groundY);
     ctx.stroke();
-
 
 
     ctx.restore();

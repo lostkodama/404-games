@@ -199,6 +199,7 @@ export function startGame(
         if (document.visibilityState === 'hidden') {
             if (!isSuspended) debugGameState('browser suspend', state);
             isSuspended = true;
+
             if (frameId !== undefined) {
                 cancelAnimationFrame(frameId);
                 frameId = undefined;
@@ -206,6 +207,8 @@ export function startGame(
 
             return
         }
+
+        resetInput(state.input);
 
         if (isSuspended) debugGameState('browser resume', state);
         isSuspended = false;

@@ -2,15 +2,8 @@ import { GRAVITY, JUMP_VELOCITY, PLAYER_GROUND_Y } from '../constants';
 import type { InputState, Player } from '../types';
 
 export function updatePlayer(player: Player, input: InputState, deltaTime: number) {
-    // TODO: uncomment for debugging
-    // console.log({
-    //     y: player.y,
-    //     velocityY: player.velocityY,
-    //     grounded: player.isGrounded,
-    //     state: player.state,
-    // });
-
     const jumped = input.jumpPressed && player.isGrounded;
+
     if (jumped) {
         player.velocityY = JUMP_VELOCITY;
         player.isGrounded = false;
@@ -21,7 +14,7 @@ export function updatePlayer(player: Player, input: InputState, deltaTime: numbe
     player.y += player.velocityY * deltaTime; // change of position because of velocity (velocity x time)
 
     // Stop at landing
-    if (player.y >= PLAYER_GROUND_Y) {
+    if (player.y >= PLAYER_GROUND_Y && player.velocityY >= 0) {
         player.y = PLAYER_GROUND_Y;
         player.velocityY = 0;
         player.isGrounded = true;
