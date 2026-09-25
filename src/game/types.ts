@@ -13,7 +13,7 @@ export type PlayerState =
     | 'hit';
 
 export type GameState =
-    | 'ready' // TODO: start screen
+    | 'ready'
     | 'running'
     | 'gameOver';
 
@@ -37,6 +37,7 @@ export type ObstacleType =
 
 export type ObstaclePattern = ObstacleType | 'doubleBuildingSmall' | 'doubleBuildingLarge';
 
+// For group obstacles
 export interface ObstacleSegment {
     type: ObstacleType;
     offsetX: number;
@@ -102,14 +103,14 @@ export interface GameData extends ObstacleState {
 export interface ObstacleSprite {
     image: HTMLImageElement;
     loaded: boolean;
-    frameWidth: number | null;
-    frameHeight: number | null;
-    frameCount: number | null;
-    columns: number | null;
+    frameWidth: number;
+    frameHeight: number;
+    frameCount: number;
+    columns: number;
 }
 
 export interface SpriteAssets {
     catSpriteSheet: HTMLImageElement;
     catSpriteLoaded: boolean;
-    obstacles: Record<ObstacleType, ObstacleSprite>;
+    obstacles: Partial<Record<ObstacleType, ObstacleSprite>>;
 }

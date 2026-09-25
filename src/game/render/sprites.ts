@@ -1,8 +1,7 @@
 import type { ObstacleSprite, SpriteAssets } from '../types';
-import { OBSTACLE_CONFIG } from '../obstacles/obstacleConfig';
-import type { ObstacleConfig } from '../obstacles/obstacleConfig';
+import {OBSTACLE_CONFIG, type ObstacleConfigSprite} from '../obstacles/obstacleConfig';
 
-function loadObstacleSprite(config: ObstacleConfig['sprite']): ObstacleSprite {
+function loadObstacleSprite(config: ObstacleConfigSprite): ObstacleSprite {
     const sprite: ObstacleSprite = {
         image: new Image(),
         loaded: false,
@@ -24,7 +23,14 @@ export function loadSprites(): SpriteAssets {
         catSpriteSheet: new Image(),
         catSpriteLoaded: false,
         obstacles: Object.fromEntries(
-            Object.entries(OBSTACLE_CONFIG).map(([type, config]) => [type, loadObstacleSprite(config.sprite)])
+            Object.entries(OBSTACLE_CONFIG).filter(([_, config]) => config.sprite != null)
+                .flatMap(([type, config]) => {
+                    if (config.sprite === null) {
+                        return [];
+                    }
+                    return [[type, loadObstacleSprite(config.sprite)
+                    ]];
+                })
         ) as SpriteAssets['obstacles'],
     };
     assets.catSpriteSheet.onload = () => { assets.catSpriteLoaded = true; };

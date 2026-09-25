@@ -37,6 +37,16 @@ export function getObstacleBounds(obstacle: Obstacle): Rect[] {
 
 function getObstacleSegmentBounds(obstacle: Obstacle, segment: ObstacleSegment): Rect {
     const { sprite, collision } = OBSTACLE_CONFIG[segment.type];
+
+    if(sprite == null) {
+        return {
+            x: obstacle.x + collision.offsetX + segment.offsetX,
+            y: obstacle.y + obstacle.height - segment.height + collision.offsetY,
+            width: collision.width,
+            height: collision.height
+        }
+    }
+
     // Match the renderer's aspect-preserving, centered, bottom-aligned fit.
     const scale = Math.min(
         segment.width / sprite.frameWidth,

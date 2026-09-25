@@ -15,43 +15,33 @@ export interface ObstacleConfig {
         readonly width: number;
         readonly height: number;
     };
-    readonly sprite: {
-        readonly src: string;
-        readonly frameWidth: number;
-        readonly frameHeight: number;
-        readonly frameCount: number;
-        readonly columns: number;
-    };
+    readonly sprite: ObstacleConfigSprite | null;
+}
+
+export interface ObstacleConfigSprite {
+    readonly src: string;
+    readonly frameWidth: number;
+    readonly frameHeight: number;
+    readonly frameCount: number;
+    readonly columns: number;
 }
 
 // Keep existing bounds until type-specific sizing is introduced.
 // The renderer fits each frame inside these bounds without stretching it.
 export const OBSTACLE_CONFIG = {
     buildingSmall: {
-        renderWidth: 40,
-        renderHeight: 55,
+        renderWidth: 32,
+        renderHeight: 35,
         movementMultiplier: 1,
-        collision: { offsetX: 12, offsetY: 12, width: 320, height: 429 },
-        sprite: {
-            src: '/sprites/building-small.png',
-            frameWidth: 344,
-            frameHeight: 441,
-            frameCount: 1,
-            columns: 1,
-        },
+        collision: { offsetX: 0, offsetY: 0, width: 32, height: 35 },
+        sprite: null,
     },
     buildingLarge: {
-        renderWidth: 40,
+        renderWidth: 24,
         renderHeight: 55,
         movementMultiplier: 1,
-        collision: { offsetX: 12, offsetY: 12, width: 324, height: 579 },
-        sprite: {
-            src: '/sprites/building-large.png',
-            frameWidth: 348,
-            frameHeight: 591,
-            frameCount: 1,
-            columns: 1,
-        },
+        collision: { offsetX: 0, offsetY: 0, width: 24, height: 55 },
+        sprite: null,
     },
     car: {
         renderWidth: 40,
