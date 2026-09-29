@@ -39,6 +39,8 @@ export const MAX_DELTA_TIME = 0.05;
 
 export const INITIAL_WORLD_SPEED = 260;
 
+export const SCORE_PER_DIFFICULTY_LEVEL = 100;
+
 export const MAX_WORLD_SPEED = 700;
 
 export const SPEED_INCREASE_PER_LEVEL = 20;

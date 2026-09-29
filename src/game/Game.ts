@@ -2,8 +2,6 @@ import {
     RESTART_COOLDOWN_SECONDS,
     INITIAL_WORLD_SPEED,
     MAX_DELTA_TIME,
-    MAX_WORLD_SPEED,
-    SPEED_INCREASE_PER_LEVEL
 } from './constants';
 import type { GameData } from './types';
 import { createPlayer, resetPlayer } from './player/player';
@@ -18,6 +16,7 @@ import { debugGameState } from './debug/debugGameState';
 import {createClouds, updateClouds} from "./environment/cloud.ts";
 import {createGroundDetails, updateGroundDetails} from "./environment/ground.ts";
 import {recordHighScoreCompletedRun, resetRunScore, updateScore} from "./scoring/scoring.ts";
+import {resetDifficulty, updateDifficulty} from "./difficulty/difficulty.ts";
 
 export type GameEvent = 'start' | 'jump' | 'gameOver' | 'levelUp';
 type OnGameEvent = (event: GameEvent) => void;
@@ -39,24 +38,6 @@ export function createGameState(): GameData {
         worldSpeed: INITIAL_WORLD_SPEED,
         clouds: createClouds(),
     };
-}
-
-function updateDifficulty(state: GameData) {
-    state.difficultyLevel =
-        Math.floor(state.score / 100);
-
-    state.worldSpeed =
-        INITIAL_WORLD_SPEED +
-        state.difficultyLevel *
-        SPEED_INCREASE_PER_LEVEL;
-
-    state.worldSpeed =
-        Math.min(
-            state.worldSpeed,
-            MAX_WORLD_SPEED
-        );
-
-
 }
 
 function gameOver(state: GameData) {
@@ -82,8 +63,7 @@ export function resetGame(state: GameData) {
     debugGameState('before reset', state);
     resetRunScore(state)
     state.restartCooldown = 0;
-    state.worldSpeed = INITIAL_WORLD_SPEED; // will be reset even without
-    state.difficultyLevel = 0;
+    resetDifficulty(state)
 
     resetPlayer(state.player);
     resetObstacles(state);
@@ -147,7 +127,7 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
     if (state.gameState === 'running') {
         updateScore(state, state.worldSpeed, deltaTime);
         const previousLevel = state.difficultyLevel;
-        updateDifficulty(state);
+        updateDifficulty(state, state.score);
         if (state.difficultyLevel > previousLevel) onEvent('levelUp');
     }
 
