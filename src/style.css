@@ -19,6 +19,7 @@ body {
 .game-container {
   width: min(100%, 900px);
   padding: 16px;
+  touch-action: manipulation;
 }
 
 canvas {
