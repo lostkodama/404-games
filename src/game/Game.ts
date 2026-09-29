@@ -51,14 +51,6 @@ function gameOver(state: GameData) {
     debugGameState('enter game over', state);
 }
 
-function updateCollision(state: GameData) {
-    if (isPlayerCollidingWithObstacle(state.player, state.obstacles)) {
-        gameOver(state);
-        return true;
-    }
-    return false;
-}
-
 export function resetGame(state: GameData) {
     debugGameState('before reset', state);
     resetRunScore(state)
@@ -121,8 +113,11 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
 
     updateGroundDetails(state.groundDetails, state.worldSpeed, deltaTime);
 
-    // Mind the order. Should be after updating player and obstacle position.
-    if (updateCollision(state)) onEvent('gameOver');
+    // Collision must have updated positions
+    if (isPlayerCollidingWithObstacle(state.player, state.obstacles)) {
+        gameOver(state);
+        onEvent('gameOver');
+    }
 
     if (state.gameState === 'running') {
         updateScore(state, state.worldSpeed, deltaTime);
