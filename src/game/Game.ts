@@ -3,7 +3,6 @@ import {
     INITIAL_WORLD_SPEED,
     MAX_DELTA_TIME,
     MAX_WORLD_SPEED,
-    SCORE_SCALE,
     SPEED_INCREASE_PER_LEVEL
 } from './constants';
 import type { GameData } from './types';
@@ -18,6 +17,7 @@ import { loadSprites } from './render/sprites';
 import { debugGameState } from './debug/debugGameState';
 import {createClouds, updateClouds} from "./environment/cloud.ts";
 import {createGroundDetails, updateGroundDetails} from "./environment/ground.ts";
+import {recordHighScoreCompletedRun, resetRunScore, updateScore} from "./scoring/scoring.ts";
 
 export type GameEvent = 'start' | 'jump' | 'gameOver' | 'levelUp';
 type OnGameEvent = (event: GameEvent) => void;
@@ -41,13 +41,6 @@ export function createGameState(): GameData {
     };
 }
 
-function updateScore(state: GameData, deltaTime: number) {
-    state.distance += state.worldSpeed * deltaTime
-    state.score = Math.floor(
-        state.distance * SCORE_SCALE
-    );
-}
-
 function updateDifficulty(state: GameData) {
     state.difficultyLevel =
         Math.floor(state.score / 100);
@@ -67,7 +60,7 @@ function updateDifficulty(state: GameData) {
 }
 
 function gameOver(state: GameData) {
-    state.highScore = Math.max(state.highScore, state.score);
+    recordHighScoreCompletedRun(state)
     state.gameState = 'gameOver';
     state.restartCooldown = RESTART_COOLDOWN_SECONDS;
     state.player.hitPose = state.player.isGrounded ? 'ground' : 'airborne';
@@ -87,9 +80,8 @@ function updateCollision(state: GameData) {
 
 export function resetGame(state: GameData) {
     debugGameState('before reset', state);
-    state.score = 0;
+    resetRunScore(state)
     state.restartCooldown = 0;
-    state.distance = 0;
     state.worldSpeed = INITIAL_WORLD_SPEED; // will be reset even without
     state.difficultyLevel = 0;
 
@@ -153,7 +145,7 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
     if (updateCollision(state)) onEvent('gameOver');
 
     if (state.gameState === 'running') {
-        updateScore(state, deltaTime);
+        updateScore(state, state.worldSpeed, deltaTime);
         const previousLevel = state.difficultyLevel;
         updateDifficulty(state);
         if (state.difficultyLevel > previousLevel) onEvent('levelUp');
