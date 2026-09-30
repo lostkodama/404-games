@@ -2,7 +2,7 @@ import startUrl from './assets/start.wav?url';
 import jumpUrl from './assets/jump.wav?url';
 import gameOverUrl from './assets/game-over.wav?url';
 import levelUpUrl from './assets/level-up.wav?url';
-import type { GameEvent } from '../game/Game';
+import type {GameEvent} from "../game/types.ts";
 
 const EFFECTS: Record<GameEvent, { src: string; volume: number }> = {
     start: { src: startUrl, volume: 0.3 },

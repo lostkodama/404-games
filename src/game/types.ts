@@ -17,6 +17,12 @@ export type GameState =
     | 'running'
     | 'gameOver';
 
+export type GameEvent =
+    | 'start'
+    | 'jump'
+    | 'gameOver'
+    | 'levelUp';
+
 export type Rect = {
     x: number;
     y: number;
@@ -57,11 +63,11 @@ export type Obstacle = {
 } & (
     | { type: Exclude<ObstacleType, 'car'> }
     | {
-        type: 'car';
-        animationTime: number;
-        animationFrameIndex: number;
-    }
-);
+    type: 'car';
+    animationTime: number;
+    animationFrameIndex: number;
+}
+    );
 
 export type HitPose = 'ground' | 'airborne' | null;
 
