@@ -1,22 +1,22 @@
 import {
     RESTART_COOLDOWN_SECONDS,
-    INITIAL_WORLD_SPEED,
-    MAX_DELTA_TIME,
+    INITIAL_WORLD_SPEED, MAX_DELTA_TIME,
 } from './constants';
-import type { GameData } from './types';
-import { createPlayer, resetPlayer } from './player/player';
-import { updatePlayer } from './player/playerPhysics';
-import { updatePlayerAnimation } from './player/playerAnimation';
-import { bindInput, createInput, resetInput } from './input/input';
-import { resetObstacles, updateObstacles, updateObstacleSpawning } from './obstacles/obstacles';
-import { isPlayerCollidingWithObstacle } from './collision/collision';
-import { render } from './render/renderer';
-import { loadSprites } from './render/sprites';
-import { debugGameState } from './debug/debugGameState';
+import type {GameData} from './types';
+import {createPlayer, resetPlayer} from './player/player';
+import {updatePlayer} from './player/playerPhysics';
+import {updatePlayerAnimation} from './player/playerAnimation';
+import {bindInput, createInput, resetInput} from './input/input';
+import {resetObstacles, updateObstacles, updateObstacleSpawning} from './obstacles/obstacles';
+import {isPlayerCollidingWithObstacle} from './collision/collision';
+import {render} from './render/renderer';
+import {loadSprites} from './render/sprites';
+import {debugGameState} from './debug/debugGameState';
 import {createClouds, updateClouds} from "./environment/cloud.ts";
 import {createGroundDetails, updateGroundDetails} from "./environment/ground.ts";
 import {recordHighScoreCompletedRun, resetRunScore, updateScore} from "./scoring/scoring.ts";
 import {resetDifficulty, updateDifficulty} from "./difficulty/difficulty.ts";
+import {startGameLoop} from "./loop/gameLoop.ts";
 
 export type GameEvent = 'start' | 'jump' | 'gameOver' | 'levelUp';
 type OnGameEvent = (event: GameEvent) => void;
@@ -64,7 +64,8 @@ export function resetGame(state: GameData) {
     debugGameState('after reset', state);
 }
 
-export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent = () => {}) {
+export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent = () => {
+}) {
     let isInitialStart = state.gameState === 'ready';
     if (state.gameState === 'gameOver') {
         if (state.restartCooldown > 0) {
@@ -132,79 +133,35 @@ export function update(state: GameData, deltaTime: number, onEvent: OnGameEvent 
 export function startGame(
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
-    onEvent: OnGameEvent = () => {},
-    onInteraction: () => void = () => {},
+    onEvent: OnGameEvent = () => {
+    },
+    onInteraction: () => void = () => {
+    },
 ) {
     const state = createGameState();
     debugGameState('initial state', state);
     const assets = loadSprites();
-    let previousTime: number | undefined;
-    let frameId: number | undefined;
-
-    let isSuspended = false;
-
-    function gameLoop(currentTime: number) {
-        frameId = undefined
-
-        if (isSuspended) {
-            return;
-        }
-
-        if (previousTime === undefined) {
-            previousTime = currentTime;
-        }
-
-        const rawDeltaTime = (currentTime - previousTime) / 1000;
-        const deltaTime = Math.min(rawDeltaTime, MAX_DELTA_TIME);
-        previousTime = currentTime;
-
-        update(state, deltaTime, onEvent);
-        render(ctx, canvas, state, assets);
-
-        frameId = requestAnimationFrame(gameLoop);
-    }
-
-    function handleVisibilityChange() {
-        if (document.visibilityState === 'hidden') {
-            if (!isSuspended) debugGameState('browser suspend', state);
-            isSuspended = true;
-
-            if (frameId !== undefined) {
-                cancelAnimationFrame(frameId);
-                frameId = undefined;
-            }
-
-            return
-        }
-
-        resetInput(state.input);
-
-        if (isSuspended) debugGameState('browser resume', state);
-        isSuspended = false;
-        previousTime = undefined;
-
-        if (frameId === undefined) {
-            frameId = requestAnimationFrame(gameLoop);
-        }
-    }
-
-    document.addEventListener(
-        'visibilitychange',
-        handleVisibilityChange
-    );
 
     const unbindInput = bindInput(canvas, state.input, () => state.gameState, onInteraction);
-    frameId = requestAnimationFrame(gameLoop);
-    return () => {
-        if (frameId !== undefined) {
-            cancelAnimationFrame(frameId);
-            frameId = undefined;
-        }
-        unbindInput();
 
-        document.removeEventListener(
-            'visibilitychange',
-            handleVisibilityChange
-        );
-    };
+    const stopGameLoop = startGameLoop({
+        maxDeltaTime: MAX_DELTA_TIME,
+        onFrame(deltaTime) {
+            update(state, deltaTime, onEvent);
+            render(ctx, canvas, state, assets);
+        },
+        onSuspend() {
+            resetInput(state.input)
+            debugGameState('browser suspend', state)
+        },
+        onResume() {
+            resetInput(state.input)
+            debugGameState('browser resume', state)
+        },
+    })
+
+    return() => {
+        stopGameLoop()
+        unbindInput()
+    }
 }
