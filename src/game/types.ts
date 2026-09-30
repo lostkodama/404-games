@@ -17,6 +17,12 @@ export type GameState =
     | 'running'
     | 'gameOver';
 
+export type GameEvent =
+    | 'start'
+    | 'jump'
+    | 'gameOver'
+    | 'levelUp';
+
 export type Rect = {
     x: number;
     y: number;
