@@ -4,9 +4,42 @@ import { createServer } from 'vite';
 
 const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom' });
 after(() => server.close());
-const { createGameState, resetGame, update } = await server.ssrLoadModule('/src/game/Game.ts');
+const { createGameState } = await server.ssrLoadModule('/src/game/gameState.ts');
+const { resetGame, updateGame: update } = await server.ssrLoadModule('/src/game/updateGame.ts');
 const { createObstacle } = await server.ssrLoadModule('/src/game/obstacles/obstacles.ts');
 const { SCORE_SCALE, IDLE_FRAME, PLAYER_GROUND_Y, JUMP_VELOCITY, GRAVITY, HIT_GROUND_FRAME, HIT_AIRBORNE_FRAME } = await server.ssrLoadModule('/src/game/constants.ts');
+const { fitSpriteToBounds } = await server.ssrLoadModule('/src/game/obstacles/spriteFit.ts');
+const { getObstacleSegmentPlacementBounds } = await server.ssrLoadModule('/src/game/obstacles/obstacleGeometry.ts');
+
+test('fits sprites without stretching, centered and bottom-aligned', () => {
+    assert.deepEqual(
+        fitSpriteToBounds({ x: 10, y: 20, width: 100, height: 100 }, 200, 100),
+        { x: 10, y: 70, width: 100, height: 50, scale: 0.5 },
+    );
+    assert.deepEqual(
+        fitSpriteToBounds({ x: 10, y: 20, width: 100, height: 50 }, 100, 200),
+        { x: 47.5, y: 20, width: 25, height: 50, scale: 0.25 },
+    );
+});
+
+test('gets placement bounds for a grounded obstacle segment', () => {
+    const obstacle = {
+        x: 100,
+        y: 200,
+        width: 80,
+        height: 60,
+    };
+    const segment = {
+        offsetX: 25,
+        width: 30,
+        height: 40,
+    };
+
+    assert.deepEqual(
+        getObstacleSegmentPlacementBounds(obstacle, segment),
+        { x: 125, y: 220, width: 30, height: 40 },
+    );
+});
 
 test('initial jump plays only start; later successful jumps play jump', () => {
     const state = createGameState();

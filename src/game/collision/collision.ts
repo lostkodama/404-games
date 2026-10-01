@@ -1,5 +1,7 @@
 import {CAT_BOTTOM_PADDING, CAT_FRAME_HEIGHT, PLAYER_SCALE} from '../constants';
 import { OBSTACLE_CONFIG } from '../obstacles/obstacleConfig';
+import { getObstacleSegmentPlacementBounds } from '../obstacles/obstacleGeometry';
+import { fitSpriteToBounds } from '../obstacles/spriteFit';
 import type { Obstacle, ObstacleSegment, Player, Rect } from '../types';
 
 const PLAYER_HITBOXES = {
@@ -35,31 +37,31 @@ export function getObstacleBounds(obstacle: Obstacle): Rect[] {
     return obstacle.segments.map(segment => getObstacleSegmentBounds(obstacle, segment));
 }
 
+// Returns the final collision hitbox for a segment after collision tuning is applied.
 function getObstacleSegmentBounds(obstacle: Obstacle, segment: ObstacleSegment): Rect {
     const { sprite, collision } = OBSTACLE_CONFIG[segment.type];
+    const placementBounds = getObstacleSegmentPlacementBounds(obstacle, segment);
 
     if(sprite == null) {
         return {
-            x: obstacle.x + collision.offsetX + segment.offsetX,
-            y: obstacle.y + obstacle.height - segment.height + collision.offsetY,
+            x: placementBounds.x + collision.offsetX,
+            y: placementBounds.y + collision.offsetY,
             width: collision.width,
             height: collision.height
         }
     }
 
-    // Match the renderer's aspect-preserving, centered, bottom-aligned fit.
-    const scale = Math.min(
-        segment.width / sprite.frameWidth,
-        segment.height / sprite.frameHeight
+    const fittedSprite = fitSpriteToBounds(
+        placementBounds,
+        sprite.frameWidth,
+        sprite.frameHeight,
     );
-    const spriteX = obstacle.x + segment.offsetX + (segment.width - sprite.frameWidth * scale) / 2;
-    const spriteY = obstacle.y + obstacle.height - sprite.frameHeight * scale;
 
     return {
-        x: spriteX + collision.offsetX * scale,
-        y: spriteY + collision.offsetY * scale,
-        width: collision.width * scale,
-        height: collision.height * scale,
+        x: fittedSprite.x + collision.offsetX * fittedSprite.scale,
+        y: fittedSprite.y + collision.offsetY * fittedSprite.scale,
+        width: collision.width * fittedSprite.scale,
+        height: collision.height * fittedSprite.scale,
     };
 }
 
