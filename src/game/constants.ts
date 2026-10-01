@@ -2,8 +2,6 @@ export const CAT_FRAME_WIDTH = 271.5;
 
 export const CAT_FRAME_HEIGHT = 311;
 
-export const CAT_FRAME_COUNT = 16;
-
 export const CAT_BOTTOM_PADDING = 23;
 
 export const GAME_WIDTH = 600;
@@ -41,7 +39,7 @@ export const INITIAL_WORLD_SPEED = 260;
 
 export const SCORE_PER_DIFFICULTY_LEVEL = 100;
 
-export const MAX_WORLD_SPEED = 700;
+export const MAX_WORLD_SPEED = 690;
 
 export const SPEED_INCREASE_PER_LEVEL = 20;
 

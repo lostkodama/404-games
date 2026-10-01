@@ -5,23 +5,32 @@ export type GameAction =
     | 'pause'
     | 'restart';
 
-export type PlayerState =
-    | 'idle'
-    | 'running'
-    | 'jumping'
-    | 'falling'
-    | 'hit';
+export const PLAYER_STATE = {
+    IDLE: 'idle',
+    RUNNING: 'running',
+    JUMPING: 'jumping',
+    FALLING: 'falling',
+    HIT: 'hit',
+} as const
 
-export type GameState =
-    | 'ready'
-    | 'running'
-    | 'gameOver';
+export type PlayerState = typeof PLAYER_STATE[keyof typeof PLAYER_STATE]
 
-export type GameEvent =
-    | 'start'
-    | 'jump'
-    | 'gameOver'
-    | 'levelUp';
+export const GAME_STATE = {
+    READY: 'ready',
+    RUNNING: 'running',
+    GAME_OVER: 'gameOver',
+} as const
+
+export type GameState = typeof GAME_STATE[keyof typeof GAME_STATE]
+
+export const SOUND_EVENT = {
+    START: 'start',
+    JUMP: 'jump',
+    GAME_OVER: 'gameOver',
+    LEVEL_UP: 'levelUp'
+} as const
+
+export type SoundEvent = typeof SOUND_EVENT[keyof typeof SOUND_EVENT]
 
 export type Rect = {
     x: number;
@@ -36,12 +45,15 @@ export type Cloud = {
     scale: number;
 };
 
-export type ObstacleType =
-    | 'buildingSmall'
-    | 'buildingLarge'
-    | 'car';
+export const OBSTACLE_TYPE = {
+    BUILDING_SMALL: 'buildingSmall',
+    BUILDING_LARGE: 'buildingLarge',
+    CAR: 'car',
+} as const;
 
-export type ObstaclePattern = ObstacleType | 'doubleBuildingSmall' | 'doubleBuildingLarge';
+export type ObstacleType = typeof OBSTACLE_TYPE[keyof typeof OBSTACLE_TYPE]
+
+export type ObstaclePattern = ObstacleType | 'doubleBuildingSmall' | 'doubleBuildingLarge' | 'tripleBuildingSmall';
 
 // For group obstacles
 export interface ObstacleSegment {

@@ -1,5 +1,5 @@
 import { IDLE_FRAME, FALL_FRAME, JUMP_FRAME, RUN_FRAME_DURATION, HIT_GROUND_FRAME, HIT_AIRBORNE_FRAME, RUN_FRAMES } from '../constants';
-import type { Player } from '../types';
+import {type Player, PLAYER_STATE} from '../types';
 
 export function updatePlayerAnimation(player: Player, deltaTime: number) {
     const stateChanged = player.state != player.previousState
@@ -10,23 +10,23 @@ export function updatePlayerAnimation(player: Player, deltaTime: number) {
     }
 
     switch (player.state) {
-        case 'idle':
+        case PLAYER_STATE.IDLE:
             player.frame = IDLE_FRAME;
             return;
 
-        case 'jumping':
+        case PLAYER_STATE.JUMPING:
             player.frame = JUMP_FRAME;
             return;
 
-        case 'falling':
+        case PLAYER_STATE.FALLING:
             player.frame = FALL_FRAME;
             return;
 
-        case 'hit':
+        case PLAYER_STATE.HIT:
             player.frame = player.hitPose === 'airborne' ? HIT_AIRBORNE_FRAME : HIT_GROUND_FRAME;
             return;
 
-        case 'running':
+        case PLAYER_STATE.RUNNING:
             break;
     }
 
@@ -35,8 +35,7 @@ export function updatePlayerAnimation(player: Player, deltaTime: number) {
     while (player.animationTime >= RUN_FRAME_DURATION) {
         player.animationTime -= RUN_FRAME_DURATION;
 
-        player.animationFrameIndex =
-            (player.animationFrameIndex + 1) % RUN_FRAMES.length;
+        player.animationFrameIndex = (player.animationFrameIndex + 1) % RUN_FRAMES.length;
     }
 
     player.frame = RUN_FRAMES[player.animationFrameIndex];

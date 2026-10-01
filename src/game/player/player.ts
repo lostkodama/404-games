@@ -1,5 +1,5 @@
 import {IDLE_FRAME, PLAYER_GROUND_Y, PLAYER_SCALE, RUN_FRAMES} from '../constants';
-import type {Player} from '../types';
+import {type Player, PLAYER_STATE} from '../types';
 
 export function createPlayer(): Player {
     return {
@@ -17,8 +17,8 @@ export function createPlayer(): Player {
         animationTime: 0,
         animationFrameIndex: 0,
 
-        state: 'idle',
-        previousState: 'idle',
+        state: PLAYER_STATE.IDLE,
+        previousState: PLAYER_STATE.IDLE,
     };
 }
 
@@ -35,6 +35,6 @@ export function resetPlayer(player: Player) {
     player.animationTime = 0;
     player.animationFrameIndex = 0;
 
-    player.state = 'running';
-    player.previousState = 'running';
+    player.state = PLAYER_STATE.RUNNING;
+    player.previousState = PLAYER_STATE.RUNNING;
 }

@@ -30,8 +30,6 @@ canvas {
   aspect-ratio: 21 / 9;
 
   background: white;
-  border: 1px solid #171717;
-
   /*means canvas will handle its own pointer gestures*/
   touch-action: none;
 }

@@ -1,5 +1,5 @@
 import { GRAVITY, JUMP_VELOCITY, PLAYER_GROUND_Y } from '../constants';
-import type { InputState, Player } from '../types';
+import {type InputState, type Player, PLAYER_STATE} from '../types';
 
 export function updatePlayer(player: Player, input: InputState, deltaTime: number) {
     const jumped = input.jumpPressed && player.isGrounded;
@@ -22,11 +22,11 @@ export function updatePlayer(player: Player, input: InputState, deltaTime: numbe
 
     // update states
     if (player.isGrounded) {
-        player.state = 'running';
+        player.state = PLAYER_STATE.RUNNING;
     } else if (player.velocityY < 0) {
-        player.state = 'jumping';
+        player.state = PLAYER_STATE.JUMPING;
     } else {
-        player.state = 'falling';
+        player.state = PLAYER_STATE.FALLING;
     }
     return jumped;
 }

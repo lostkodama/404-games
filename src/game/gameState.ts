@@ -1,4 +1,4 @@
-import type {GameData} from "./types.ts";
+import {GAME_STATE, type GameData} from "./types.ts";
 import {createPlayer} from "./player/player.ts";
 import {createInput} from "./input/input.ts";
 import {createGroundDetails} from "./environment/ground.ts";
@@ -7,7 +7,7 @@ import {createClouds} from "./environment/cloud.ts";
 
 export function createGameState(): GameData {
     return {
-        gameState: 'ready',
+        gameState: GAME_STATE.READY,
         restartCooldown: 0,
         player: createPlayer(),
         input: createInput(),
