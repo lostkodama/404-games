@@ -2,9 +2,9 @@ import startUrl from './assets/start.wav?url';
 import jumpUrl from './assets/jump.wav?url';
 import gameOverUrl from './assets/game-over.wav?url';
 import levelUpUrl from './assets/level-up.wav?url';
-import type {GameEvent} from "../game/types.ts";
+import type {SoundEvent} from "../game/types.ts";
 
-const EFFECTS: Record<GameEvent, { src: string; volume: number }> = {
+const EFFECTS: Record<SoundEvent, { src: string; volume: number }> = {
     start: { src: startUrl, volume: 0.3 },
     jump: { src: jumpUrl, volume: 0.25 },
     gameOver: { src: gameOverUrl, volume: 0.3 },
@@ -21,7 +21,7 @@ export function createSounds() {
             audio.volume = config.volume;
             return [name, { audio, ready: false, unlocking: undefined }];
         }),
-    ) as Record<GameEvent, {
+    ) as Record<SoundEvent, {
         audio: HTMLAudioElement;
         ready: boolean;
         unlocking: Promise<void> | undefined;
@@ -51,7 +51,7 @@ export function createSounds() {
         }
     }
 
-    async function play(name: GameEvent) {
+    async function play(name: SoundEvent) {
         if (disposed || muted) return;
         const effect = effects[name];
         try {

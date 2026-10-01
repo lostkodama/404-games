@@ -1,4 +1,4 @@
-import type {GameData, GameEvent} from "./types.ts";
+import {GAME_STATE, type GameData, type SoundEvent, PLAYER_STATE, SOUND_EVENT} from "./types.ts";
 import {resetInput} from "./input/input.ts";
 import {debugGameState} from "./debug/debugGameState.ts";
 import {updatePlayer} from "./player/playerPhysics.ts";
@@ -12,12 +12,12 @@ import {resetDifficulty, updateDifficulty} from "./difficulty/difficulty.ts";
 import {resetPlayer} from "./player/player.ts";
 import {RESTART_COOLDOWN_SECONDS} from "./constants.ts";
 
-export type OnGameEvent = (event: GameEvent) => void;
+export type OnSoundEvent = (event: SoundEvent) => void;
 
-export function updateGame(state: GameData, deltaTime: number, onEvent: OnGameEvent = () => {
+export function updateGame(state: GameData, deltaTime: number, onSoundEvent: OnSoundEvent = () => {
 }) {
-    let isInitialStart = state.gameState === 'ready';
-    if (state.gameState === 'gameOver') {
+    let isInitialStart = state.gameState === GAME_STATE.READY;
+    if (state.gameState === GAME_STATE.GAME_OVER) {
         if (state.restartCooldown > 0) {
             state.restartCooldown = Math.max(0, state.restartCooldown - deltaTime);
             // Discard even the input on the frame that reaches zero.
@@ -32,25 +32,25 @@ export function updateGame(state: GameData, deltaTime: number, onEvent: OnGameEv
 
         resetGame(state);
         isInitialStart = true;
-        onEvent('start');
+        onSoundEvent(SOUND_EVENT.START);
         // The accepted restart action also jumps through normal physics below.
         state.input.jumpPressed = true;
     }
 
-    if (state.gameState === 'ready') {
+    if (state.gameState === GAME_STATE.READY) {
         if (!state.input.jumpPressed) {
             resetInput(state.input);
             return;
         }
-        state.gameState = 'running';
-        onEvent('start');
+        state.gameState = GAME_STATE.RUNNING;
+        onSoundEvent(SOUND_EVENT.START);
         // Keep jumpPressed for the normal physics update below.
     }
 
     const jumped = updatePlayer(state.player, state.input, deltaTime);
 
     // Starting and restarting already play the start sound; later jumps keep their effect.
-    if (jumped && !isInitialStart) onEvent('jump');
+    if (jumped && !isInitialStart) onSoundEvent(SOUND_EVENT.JUMP);
 
     updatePlayerAnimation(state.player, deltaTime);
     updateObstacles(state, state.worldSpeed, deltaTime);
@@ -67,14 +67,14 @@ export function updateGame(state: GameData, deltaTime: number, onEvent: OnGameEv
     // Collision must have updated positions
     if (isPlayerCollidingWithObstacle(state.player, state.obstacles)) {
         gameOver(state);
-        onEvent('gameOver');
+        onSoundEvent(SOUND_EVENT.GAME_OVER);
     }
 
-    if (state.gameState === 'running') {
+    if (state.gameState === GAME_STATE.RUNNING) {
         updateScore(state, state.worldSpeed, deltaTime);
         const previousLevel = state.difficultyLevel;
         updateDifficulty(state, state.score);
-        if (state.difficultyLevel > previousLevel) onEvent('levelUp');
+        if (state.difficultyLevel > previousLevel) onSoundEvent(SOUND_EVENT.LEVEL_UP);
     }
 
     resetInput(state.input);
@@ -95,10 +95,10 @@ export function resetGame(state: GameData) {
 
 function gameOver(state: GameData) {
     recordHighScoreCompletedRun(state)
-    state.gameState = 'gameOver';
+    state.gameState = GAME_STATE.GAME_OVER;
     state.restartCooldown = RESTART_COOLDOWN_SECONDS;
     state.player.hitPose = state.player.isGrounded ? 'ground' : 'airborne';
-    state.player.state = 'hit';
+    state.player.state = PLAYER_STATE.HIT;
     // Collision follows animation in update(); select the frozen hit frame now.
     updatePlayerAnimation(state.player, 0);
     debugGameState('enter game over', state);

@@ -6,14 +6,18 @@ export function selectObstaclePattern(
     previousType: ObstaclePattern | undefined,
     random: () => number = Math.random
 ): ObstaclePattern {
+
+    // Filter by enabled + spanWeight
     const enabled = (Object.keys(OBSTACLE_PATTERNS) as ObstaclePattern[])
         .filter(type =>
             difficultyLevel >= OBSTACLE_PATTERNS[type].minLevel &&
             OBSTACLE_PATTERNS[type].spawnWeight > 0
         );
-    const eligible = enabled.filter(type =>
-        type !== previousType || OBSTACLE_PATTERNS[type].allowConsecutive
-    );
+
+    // Filter by allowConsecutive
+    const eligible = enabled.filter(type => type !== previousType
+        || OBSTACLE_PATTERNS[type].allowConsecutive);
+
     // If tuning leaves only a non-repeatable pattern enabled, allow it rather
     // than blocking spawning or selecting a pattern with a zero weight.
     const candidates = eligible.length > 0 ? eligible : enabled;
