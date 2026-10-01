@@ -1,5 +1,7 @@
 import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from '../constants';
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
+import { getObstacleSegmentPlacementBounds } from '../obstacles/obstacleGeometry';
+import { fitSpriteToBounds } from '../obstacles/spriteFit';
 import type {Cloud, GameData, GameState, Obstacle, Player, SpriteAssets} from '../types';
 import type {GroundDetail} from "../environment/ground.ts";
 
@@ -54,14 +56,19 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
 
     for (const obstacle of obstacles) {
         for (const segment of obstacle.segments) {
-            const x = obstacle.x + segment.offsetX;
-            const y = obstacle.y + obstacle.height - segment.height;
+            const placementBounds = getObstacleSegmentPlacementBounds(obstacle, segment);
 
             const sprite = assets.obstacles[segment.type];
 
             if (sprite == null) {
                 if(segment.type == 'buildingSmall' || segment.type == 'buildingLarge') {
-                    drawBuilding(ctx, x, y, segment.width, segment.height)
+                    drawBuilding(
+                        ctx,
+                        placementBounds.x,
+                        placementBounds.y,
+                        placementBounds.width,
+                        placementBounds.height,
+                    )
                 }
                 continue;
             }
@@ -70,15 +77,20 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
 
             if (!sprite.loaded || frameWidth === null || frameHeight === null ||
                 frameWidth <= 0 || frameHeight <= 0 || columns === null || columns <= 0) {
-                ctx.fillRect(x, y, segment.width, segment.height);
+                ctx.fillRect(
+                    placementBounds.x,
+                    placementBounds.y,
+                    placementBounds.width,
+                    placementBounds.height,
+                );
                 continue;
             }
 
-            // Fit without stretching; keep the sprite centered and grounded within
-            // the existing obstacle bounds. Buildings always use frame zero.
-            const scale = Math.min(segment.width / frameWidth, segment.height / frameHeight);
-            const width = frameWidth * scale;
-            const height = frameHeight * scale;
+            const fittedSprite = fitSpriteToBounds(
+                placementBounds,
+                frameWidth,
+                frameHeight,
+            );
             const frame = obstacle.type === 'car' ? obstacle.animationFrameIndex : 0;
             const sourceX = (frame % columns) * frameWidth;
             const sourceY = Math.floor(frame / columns) * frameHeight;
@@ -87,10 +99,10 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
                 sprite.image,
                 sourceX, sourceY, frameWidth, frameHeight,
                 // Snap only the rendered position, preserving fractional physics/collision.
-                Math.round((x + (segment.width - width) / 2) * scaleX) / scaleX,
-                Math.round((y + segment.height - height) * scaleY) / scaleY,
-                width,
-                height
+                Math.round(fittedSprite.x * scaleX) / scaleX,
+                Math.round(fittedSprite.y * scaleY) / scaleY,
+                fittedSprite.width,
+                fittedSprite.height,
             );
         }
     }
