@@ -13,9 +13,6 @@ import {updateObstacles} from "./obstacles/obstacles.ts";
 vi.mock("./input/input", () => ({
     resetInput: vi.fn(),
 }));
-vi.mock("./debug/debugGameState", () => ({
-    debugGameState: vi.fn(),
-}));
 vi.mock("./player/playerPhysics", () => ({
     updatePlayer: vi.fn(),
 }));
