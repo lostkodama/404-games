@@ -1,4 +1,4 @@
-import type { ObstacleSprite, SpriteAssets } from '../types';
+import type { ObstacleSprite, SpriteAssets } from './spriteTypes';
 import {OBSTACLE_CONFIG, type ObstacleConfigSprite} from '../obstacles/obstacleConfig';
 
 function loadObstacleSprite(config: ObstacleConfigSprite): ObstacleSprite {

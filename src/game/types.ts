@@ -120,18 +120,3 @@ export interface GameData extends ObstacleState {
     worldSpeed: number;
     clouds: Cloud[];
 }
-
-export interface ObstacleSprite {
-    image: HTMLImageElement;
-    loaded: boolean;
-    frameWidth: number;
-    frameHeight: number;
-    frameCount: number;
-    columns: number;
-}
-
-export interface SpriteAssets {
-    catSpriteSheet: HTMLImageElement;
-    catSpriteLoaded: boolean;
-    obstacles: Partial<Record<ObstacleType, ObstacleSprite>>;
-}
