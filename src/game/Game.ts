@@ -1,4 +1,5 @@
-import {bindInput, resetInput} from './input/input';
+import {resetInput} from './input/input';
+import {bindInput} from './input/browserInput';
 import {render} from './render/renderer';
 import {loadSprites} from './render/sprites';
 import {debugGameState} from './debug/debugGameState';
