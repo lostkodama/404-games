@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": []
+  },
+  "include": [
+    "src/game/types.ts",
+    "src/game/constants.ts",
+    "src/game/gameState.ts",
+    "src/game/updateGame.ts",
+    "src/game/input/input.ts",
+    "src/game/player/**/*.ts",
+    "src/game/obstacles/**/*.ts",
+    "src/game/collision/**/*.ts",
+    "src/game/scoring/**/*.ts",
+    "src/game/difficulty/**/*.ts",
+    "src/game/environment/**/*.ts"
+  ],
+  "exclude": ["src/**/*.test.ts"]
+}

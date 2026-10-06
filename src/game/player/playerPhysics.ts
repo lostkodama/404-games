@@ -7,7 +7,6 @@ export function updatePlayer(player: Player, input: InputState, deltaTime: numbe
     if (jumped) {
         player.velocityY = JUMP_VELOCITY;
         player.isGrounded = false;
-        console.log('Player jump action received');
     }
 
     player.velocityY += GRAVITY * deltaTime; // change of velocity because of acceleration (gravity x time)
