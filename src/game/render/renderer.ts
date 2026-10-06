@@ -2,7 +2,8 @@ import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } 
 import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
 import { getObstacleSegmentPlacementBounds } from '../obstacles/obstacleGeometry';
 import { fitSpriteToBounds } from '../obstacles/spriteFit';
-import type {Cloud, GameData, GameState, Obstacle, Player, SpriteAssets} from '../types';
+import type {Cloud, GameData, GameState, Obstacle, Player} from '../types';
+import type {SpriteAssets} from './spriteTypes';
 import type {GroundDetail} from "../environment/ground.ts";
 
 const SHOW_COLLISION_BOUNDS = true
