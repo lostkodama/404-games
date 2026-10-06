@@ -1,4 +1,4 @@
-import type { GameAction, GameState, InputState } from '../types';
+import {GAME_STATE, type GameAction, type GameState, type InputState} from '../types';
 
 export function createInput(): InputState {
     return { jumpPressed: false, restartPressed: false };
@@ -11,8 +11,6 @@ export function triggerAction(input: InputState, action: GameAction) {
             break;
         case 'restart':
             input.restartPressed = true;
-            break;
-        case 'pause':
             break;
     }
 }
@@ -33,7 +31,7 @@ export function handleKeyDown(input: InputState, gameState: GameState, event: Ke
     ) {
         event.preventDefault();
 
-        if (gameState === 'gameOver') {
+        if (gameState === GAME_STATE.GAME_OVER) {
             triggerAction(input, 'restart');
             return;
         }
@@ -45,7 +43,7 @@ export function handleKeyDown(input: InputState, gameState: GameState, event: Ke
 export function handlePointerDown(input: InputState, gameState: GameState, event: PointerEvent) {
     event.preventDefault();
 
-    if (gameState === 'gameOver') {
+    if (gameState === GAME_STATE.GAME_OVER) {
         triggerAction(input, 'restart');
         return;
     }

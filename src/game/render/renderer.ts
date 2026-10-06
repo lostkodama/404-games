@@ -5,7 +5,7 @@ import { fitSpriteToBounds } from '../obstacles/spriteFit';
 import type {Cloud, GameData, GameState, Obstacle, Player, SpriteAssets} from '../types';
 import type {GroundDetail} from "../environment/ground.ts";
 
-const SHOW_COLLISION_BOUNDS = false
+const SHOW_COLLISION_BOUNDS = true
 const SHOW_DIFFICULTY_STATS = false
 
 function prepareCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
