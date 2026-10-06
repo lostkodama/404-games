@@ -28,5 +28,6 @@ export function updatePlayer(player: Player, input: InputState, deltaTime: numbe
     } else {
         player.state = PLAYER_STATE.FALLING;
     }
+
     return jumped;
 }

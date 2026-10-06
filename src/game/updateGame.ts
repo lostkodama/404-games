@@ -18,10 +18,9 @@ export function updateGame(state: GameData, deltaTime: number, onSoundEvent: OnS
 }) {
     let isInitialStart = state.gameState === GAME_STATE.READY;
     if (state.gameState === GAME_STATE.GAME_OVER) {
+
         if (state.restartCooldown > 0) {
             state.restartCooldown = Math.max(0, state.restartCooldown - deltaTime);
-            // Discard even the input on the frame that reaches zero.
-            // Restart requires a new action after the prompt becomes available.
             resetInput(state.input);
             return;
         }
@@ -29,12 +28,10 @@ export function updateGame(state: GameData, deltaTime: number, onSoundEvent: OnS
             resetInput(state.input);
             return;
         }
-
         resetGame(state);
         isInitialStart = true;
         onSoundEvent(SOUND_EVENT.START);
-        // The accepted restart action also jumps through normal physics below.
-        state.input.jumpPressed = true;
+        state.input. jumpPressed = false;
     }
 
     if (state.gameState === GAME_STATE.READY) {
@@ -44,7 +41,7 @@ export function updateGame(state: GameData, deltaTime: number, onSoundEvent: OnS
         }
         state.gameState = GAME_STATE.RUNNING;
         onSoundEvent(SOUND_EVENT.START);
-        // Keep jumpPressed for the normal physics update below.
+        state.input. jumpPressed = false;
     }
 
     const jumped = updatePlayer(state.player, state.input, deltaTime);
@@ -89,7 +86,7 @@ export function resetGame(state: GameData) {
     resetPlayer(state.player);
     resetObstacles(state);
 
-    state.gameState = 'running';
+    state.gameState = GAME_STATE.RUNNING;
     debugGameState('after reset', state);
 }
 

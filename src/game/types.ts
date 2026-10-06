@@ -1,8 +1,8 @@
 import type {GroundDetail} from "./environment/ground.ts";
 
+// Requested Action from user based on Inputs
 export type GameAction =
     | 'jump'
-    | 'pause'
     | 'restart';
 
 export const PLAYER_STATE = {
