@@ -1,6 +1,5 @@
 import {GAME_STATE, type GameData, type SoundEvent, PLAYER_STATE, SOUND_EVENT} from "./types.ts";
 import {resetInput} from "./input/input.ts";
-import {debugGameState} from "./debug/debugGameState.ts";
 import {updatePlayer} from "./player/playerPhysics.ts";
 import {updatePlayerAnimation} from "./player/playerAnimation.ts";
 import {resetObstacles, updateObstacles, updateObstacleSpawning} from "./obstacles/obstacles.ts";
@@ -78,7 +77,6 @@ export function updateGame(state: GameData, deltaTime: number, onSoundEvent: OnS
 }
 
 export function resetGame(state: GameData) {
-    debugGameState('before reset', state);
     resetRunScore(state)
     state.restartCooldown = 0;
     resetDifficulty(state)
@@ -87,7 +85,6 @@ export function resetGame(state: GameData) {
     resetObstacles(state);
 
     state.gameState = GAME_STATE.RUNNING;
-    debugGameState('after reset', state);
 }
 
 function gameOver(state: GameData) {
@@ -98,5 +95,4 @@ function gameOver(state: GameData) {
     state.player.state = PLAYER_STATE.HIT;
     // Collision follows animation in update(); select the frozen hit frame now.
     updatePlayerAnimation(state.player, 0);
-    debugGameState('enter game over', state);
 }

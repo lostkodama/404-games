@@ -25,7 +25,11 @@ export function startGame(
     const stopGameLoop = startGameLoop({
         maxDeltaTime: MAX_DELTA_TIME,
         onFrame(deltaTime) {
+            const previousGameState = state.gameState;
             updateGame(state, deltaTime, onSoundEvent);
+            if (state.gameState !== previousGameState) {
+                debugGameState(`${previousGameState} → ${state.gameState}`, state);
+            }
             render(ctx, canvas, state, assets);
         },
         onSuspend() {
