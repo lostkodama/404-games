@@ -19,7 +19,6 @@ export interface ObstacleConfig {
 }
 
 export interface ObstacleConfigSprite {
-    readonly src: string;
     readonly frameWidth: number;
     readonly frameHeight: number;
     readonly frameCount: number;
@@ -50,7 +49,6 @@ export const OBSTACLE_CONFIG = {
         animationFps: 8,
         collision: { offsetX: 40, offsetY: 16, width: 204, height: 135 },
         sprite: {
-            src: '/sprites/car.png',
             frameWidth: 2172 / 8,
             frameHeight: 151,
             frameCount: 8,
