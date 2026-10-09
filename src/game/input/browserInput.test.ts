@@ -1,5 +1,4 @@
 import {describe, expect, it, vi} from "vitest";
-import {createInput} from "./input.ts";
 import {handleKeyDown, handlePointerDown} from "./browserInput.ts";
 import {GAME_STATE} from "../types.ts";
 
@@ -7,7 +6,7 @@ import {GAME_STATE} from "../types.ts";
 
 describe("handleKeyDown", () => {
     it.each(['Space', 'ArrowUp'])("triggers jump when %s is pressed during gameplay", (code) => {
-        const input = createInput()
+        const actions = {onJump: vi.fn(), onRestart: vi.fn()}
 
         const event = {
             code,
@@ -15,15 +14,15 @@ describe("handleKeyDown", () => {
             preventDefault: vi.fn(),
         } as unknown as KeyboardEvent;
 
-        handleKeyDown(input, GAME_STATE.RUNNING, event,)
+        handleKeyDown(actions, GAME_STATE.RUNNING, event,)
 
-        expect(input.jumpPressed).toEqual(true)
-        expect(input.restartPressed).toEqual(false)
+        expect(actions.onJump).toHaveBeenCalledOnce()
+        expect(actions.onRestart).not.toHaveBeenCalled()
         expect(event.preventDefault).toHaveBeenCalledOnce()
     })
 
     it("triggers restart instead of jump during game over", () => {
-        const input = createInput()
+        const actions = {onJump: vi.fn(), onRestart: vi.fn()}
 
         const event = {
             code: 'Space',
@@ -31,15 +30,15 @@ describe("handleKeyDown", () => {
             preventDefault: vi.fn(),
         } as unknown as KeyboardEvent;
 
-        handleKeyDown(input, GAME_STATE.GAME_OVER, event,)
+        handleKeyDown(actions, GAME_STATE.GAME_OVER, event,)
 
-        expect(input.jumpPressed).toEqual(false)
-        expect(input.restartPressed).toEqual(true)
+        expect(actions.onJump).not.toHaveBeenCalled()
+        expect(actions.onRestart).toHaveBeenCalledOnce()
         expect(event.preventDefault).toHaveBeenCalledOnce()
     })
 
     it("ignores repeated keydown events", () => {
-        const input = createInput()
+        const actions = {onJump: vi.fn(), onRestart: vi.fn()}
 
         const event = {
             code: 'Space',
@@ -47,55 +46,55 @@ describe("handleKeyDown", () => {
             preventDefault: vi.fn(),
         } as unknown as KeyboardEvent;
 
-        handleKeyDown(input, GAME_STATE.GAME_OVER, event,)
+        handleKeyDown(actions, GAME_STATE.GAME_OVER, event,)
 
-        expect(input.jumpPressed).toEqual(false)
-        expect(input.restartPressed).toEqual(false)
+        expect(actions.onJump).not.toHaveBeenCalled()
+        expect(actions.onRestart).not.toHaveBeenCalled()
         expect(event.preventDefault).not.toHaveBeenCalledOnce()
     })
 
     it("ignores unsupported keys", () => {
-        const input = createInput()
+        const actions = {onJump: vi.fn(), onRestart: vi.fn()}
 
         const event = {
             code: 'Esc',
-            repeat: true,
+            repeat: false,
             preventDefault: vi.fn(),
         } as unknown as KeyboardEvent;
 
-        handleKeyDown(input, GAME_STATE.GAME_OVER, event,)
-        expect(input.jumpPressed).toEqual(false)
-        expect(input.restartPressed).toEqual(false)
+        handleKeyDown(actions, GAME_STATE.GAME_OVER, event,)
+        expect(actions.onJump).not.toHaveBeenCalled()
+        expect(actions.onRestart).not.toHaveBeenCalled()
         expect(event.preventDefault).not.toHaveBeenCalledOnce()
     })
 })
 
 describe("handlePointerDown", () => {
     it("triggers jump during gameplay", () => {
-        const input = createInput()
+        const actions = {onJump: vi.fn(), onRestart: vi.fn()}
 
         const event = {
             preventDefault: vi.fn(),
         } as unknown as PointerEvent;
 
-        handlePointerDown(input, GAME_STATE.RUNNING, event,)
+        handlePointerDown(actions, GAME_STATE.RUNNING, event,)
 
-        expect(input.jumpPressed).toEqual(true)
-        expect(input.restartPressed).toEqual(false)
+        expect(actions.onJump).toHaveBeenCalledOnce()
+        expect(actions.onRestart).not.toHaveBeenCalled()
         expect(event.preventDefault).toHaveBeenCalledOnce()
     })
 
     it("triggers restart instead of jump during game over", () => {
-        const input = createInput()
+        const actions = {onJump: vi.fn(), onRestart: vi.fn()}
 
         const event = {
             preventDefault: vi.fn(),
         } as unknown as PointerEvent;
 
-        handlePointerDown(input, GAME_STATE.GAME_OVER, event,)
+        handlePointerDown(actions, GAME_STATE.GAME_OVER, event,)
 
-        expect(input.jumpPressed).toEqual(false)
-        expect(input.restartPressed).toEqual(true)
+        expect(actions.onJump).not.toHaveBeenCalled()
+        expect(actions.onRestart).toHaveBeenCalledOnce()
         expect(event.preventDefault).toHaveBeenCalledOnce()
     })
 })
