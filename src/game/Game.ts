@@ -1,5 +1,5 @@
-import {resetInput} from './input/input';
-import {bindInput} from './input/browserInput';
+import {resetInput, triggerAction} from './input/input';
+import type {GameState} from './types';
 import {render} from './render/renderer';
 import {loadSprites} from './render/sprites';
 import {debugGameState} from './debug/debugGameState';
@@ -8,19 +8,25 @@ import {createGameState} from "./gameState.ts";
 import {type OnSoundEvent, updateGame} from "./updateGame.ts";
 import {MAX_DELTA_TIME} from "./constants.ts";
 
+export type GameSession = {
+    pressJump(): void;
+    pressRestart(): void;
+    getGameStatus(): GameState;
+    pause(): void;
+    resume(): void;
+    restart(): void;
+    destroy(): void;
+};
+
 export function startGame(
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
     onSoundEvent: OnSoundEvent = () => {
     },
-    onInteraction: () => void = () => {
-    },
-) {
+): GameSession {
     const state = createGameState();
     debugGameState('initial state', state);
     const assets = loadSprites();
-
-    const unbindInput = bindInput(canvas, state.input, () => state.gameState, onInteraction);
 
     const stopGameLoop = startGameLoop({
         maxDeltaTime: MAX_DELTA_TIME,
@@ -42,8 +48,33 @@ export function startGame(
         },
     })
 
-    return() => {
-        stopGameLoop()
-        unbindInput()
+    return {
+        pressJump() {
+            triggerAction(state.input, 'jump');
+        },
+
+        pressRestart() {
+            triggerAction(state.input, 'restart');
+        },
+
+        getGameStatus() {
+            return state.gameState;
+        },
+
+        pause() {
+            // wire in next
+        },
+
+        resume() {
+            // wire in next
+        },
+
+        restart() {
+            // wire in next
+        },
+
+        destroy() {
+            stopGameLoop();
+        },
     }
 }

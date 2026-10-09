@@ -1,6 +1,4 @@
 import './style.css';
-import { startGame } from './game/Game';
-import { createSounds } from './audio/sounds';
 
 // Canvas-only fonts need an explicit load; keep the game usable if loading fails.
 void document.fonts.load('700 32px "Space Grotesk"').catch(() => {});
@@ -15,12 +13,12 @@ if (!ctx) {
     throw new Error('2D rendering context not available');
 }
 
-const sounds = createSounds();
-const stopGame = startGame(canvas, ctx, sounds.play, sounds.unlock);
+// const sounds = createSounds();
+// const stopGame = startGame(canvas, ctx, sounds.play, sounds.unlock);
 
 if (import.meta.hot) {
     import.meta.hot.dispose(() => {
-        stopGame();
-        sounds.dispose();
+        // stopGame();
+        // sounds.dispose();
     });
 }
