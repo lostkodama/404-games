@@ -15,7 +15,7 @@ describe('selectObstaclePattern', () => {
     it('unlocks patterns only at their configured difficulty levels', () => {
         expect(selectObstaclePattern(2, undefined, () => 0.999)).toBe('doubleBuildingLarge');
         expect(selectObstaclePattern(3, undefined, () => 0.999)).toBe('car');
-        expect(selectObstaclePattern(4, undefined, () => 0.85)).toBe('tripleBuildingSmall');
+        expect(selectObstaclePattern(4, undefined, () => 0.64)).toBe('tripleBuildingSmall');
     });
 
     it('throws when no pattern is unlocked with positive weight', () => {

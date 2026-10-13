@@ -1,13 +1,29 @@
-import { CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from '../constants';
-import { getObstacleBounds, getPlayerBounds } from '../collision/collision';
-import { getObstacleSegmentPlacementBounds } from '../obstacles/obstacleGeometry';
-import { fitSpriteToBounds } from '../obstacles/spriteFit';
+import {CAT_FRAME_HEIGHT, CAT_FRAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, GROUND_Y} from '../constants';
+import {getObstacleBounds, getPlayerBounds} from '../collision/collision';
+import {getObstacleSegmentPlacementBounds} from '../obstacles/obstacleGeometry';
+import {fitSpriteToBounds} from '../obstacles/spriteFit';
 import type {Cloud, GameData, GameState, Obstacle, Player} from '../types';
 import type {SpriteAssets} from './spriteTypes';
 import type {GroundDetail} from "../environment/ground.ts";
 
-const SHOW_COLLISION_BOUNDS = true
+const SHOW_COLLISION_BOUNDS = false
 const SHOW_DIFFICULTY_STATS = false
+
+type RenderTheme = {
+    accentColor: string
+    backgroundColor: string
+    textColor: string
+};
+
+const DEFAULT_RENDER_THEME: RenderTheme = {
+    accentColor: '#414141',
+    backgroundColor: '#f7f7f7',
+    textColor: '#171717',
+};
+
+type RenderOptions = {
+    accentColor: string;
+};
 
 function prepareCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
     const pixelRatio = window.devicePixelRatio || 1;
@@ -46,14 +62,14 @@ function formatScore(score: number, digits = 4): string {
 }
 
 
-function drawBackground(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = '#f7f7f7';
+function drawBackground(ctx: CanvasRenderingContext2D, theme: RenderTheme) {
+    ctx.fillStyle = theme.backgroundColor;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 }
 
-function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], assets: SpriteAssets) {
+function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], assets: SpriteAssets, theme: RenderTheme) {
     ctx.fillStyle = '#555';
-    const { a: scaleX, d: scaleY } = ctx.getTransform();
+    const {a: scaleX, d: scaleY} = ctx.getTransform();
 
     for (const obstacle of obstacles) {
         for (const segment of obstacle.segments) {
@@ -62,19 +78,20 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
             const sprite = assets.obstacles[segment.type];
 
             if (sprite == null) {
-                if(segment.type == 'buildingSmall' || segment.type == 'buildingLarge') {
+                if (segment.type == 'buildingSmall' || segment.type == 'buildingLarge') {
                     drawBuilding(
                         ctx,
                         placementBounds.x,
                         placementBounds.y,
                         placementBounds.width,
                         placementBounds.height,
+                        theme
                     )
                 }
                 continue;
             }
 
-            const { frameWidth, frameHeight, columns } = sprite;
+            const {frameWidth, frameHeight, columns} = sprite;
 
             if (!sprite.loaded || frameWidth === null || frameHeight === null ||
                 frameWidth <= 0 || frameHeight <= 0 || columns === null || columns <= 0) {
@@ -96,15 +113,25 @@ function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], ass
             const sourceX = (frame % columns) * frameWidth;
             const sourceY = Math.floor(frame / columns) * frameHeight;
 
-            ctx.drawImage(
+            drawTintedSprite(
+                ctx,
                 sprite.image,
+                theme.accentColor,
                 sourceX, sourceY, frameWidth, frameHeight,
-                // Snap only the rendered position, preserving fractional physics/collision.
                 Math.round(fittedSprite.x * scaleX) / scaleX,
                 Math.round(fittedSprite.y * scaleY) / scaleY,
                 fittedSprite.width,
                 fittedSprite.height,
-            );
+            )
+            // ctx.drawImage(
+            //     sprite.image,
+            //     sourceX, sourceY, frameWidth, frameHeight,
+            //     // Snap only the rendered position, preserving fractional physics/collision.
+            //     Math.round(fittedSprite.x * scaleX) / scaleX,
+            //     Math.round(fittedSprite.y * scaleY) / scaleY,
+            //     fittedSprite.width,
+            //     fittedSprite.height,
+            // );
         }
     }
 }
@@ -114,11 +141,13 @@ function drawBuilding(
     x: number,
     y: number,
     width: number,
-    height: number
+    height: number,
+    theme: RenderTheme
 ) {
     ctx.save()
 
-    ctx.fillStyle = '#414141';
+    ctx.globalAlpha = 0.90;
+    ctx.fillStyle = theme.accentColor;
     ctx.fillRect(x, y, width, height);
 
     const roofWidth = width * 0.4;
@@ -134,7 +163,7 @@ function drawBuilding(
     ctx.restore();
 }
 
-function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, restartCooldown: number) {
+function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, restartCooldown: number, theme: RenderTheme) {
     if (gameState !== 'gameOver') {
         return;
     }
@@ -148,7 +177,7 @@ function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, resta
         GAME_HEIGHT
     );
 
-    ctx.fillStyle = '#171717';
+    ctx.fillStyle = theme.textColor;
     ctx.textAlign = 'center';
 
     ctx.font =
@@ -171,6 +200,8 @@ function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, resta
 }
 
 function drawPlayerFrame(ctx: CanvasRenderingContext2D, player: Player, assets: SpriteAssets, frame: number) {
+    ctx.save()
+
     const sourceX =
         frame * CAT_FRAME_WIDTH;
 
@@ -191,10 +222,10 @@ function drawPlayerFrame(ctx: CanvasRenderingContext2D, player: Player, assets: 
     );
 }
 
-function drawPlayer(ctx: CanvasRenderingContext2D, player: Player, assets: SpriteAssets) {
+function drawPlayer(ctx: CanvasRenderingContext2D, player: Player, assets: SpriteAssets, theme: RenderTheme) {
     // Rectangle
     if (!assets.catSpriteLoaded) {
-        ctx.strokeStyle = '#171717';
+        ctx.strokeStyle = theme.accentColor;
 
         ctx.strokeRect(
             player.x,
@@ -261,32 +292,39 @@ function drawDebugBounds(ctx: CanvasRenderingContext2D, player: Player, obstacle
     ctx.strokeStyle = 'blue';
 }
 
-export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, state: GameData, assets: SpriteAssets) {
+export function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, state: GameData, assets: SpriteAssets, options: RenderOptions) {
+
+    const theme: RenderTheme = {
+        ...DEFAULT_RENDER_THEME,
+        accentColor: options.accentColor ?? DEFAULT_RENDER_THEME.accentColor,
+    };
+
     prepareCanvas(ctx, canvas);
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    drawBackground(ctx); // background
+    drawBackground(ctx, theme); // background
 
-    drawClouds(ctx, state.clouds) // worlds
-    drawGround(ctx);
-    drawGroundDetails(ctx, state.groundDetails)
+    drawClouds(ctx, state.clouds, theme) // worlds
+    drawGround(ctx, theme);
+    drawGroundDetails(ctx, state.groundDetails, theme)
 
-    drawObstacles(ctx, state.obstacles, assets); // game objects
-    drawPlayer(ctx, state.player, assets);
+    drawObstacles(ctx, state.obstacles, assets, theme); // game objects
+    drawPlayer(ctx, state.player, assets, theme);
 
     if (SHOW_COLLISION_BOUNDS) drawDebugBounds(ctx, state.player, state.obstacles);
-    if(SHOW_DIFFICULTY_STATS) drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
+    if (SHOW_DIFFICULTY_STATS) drawDebugDifficulty(ctx, state.worldSpeed, state.difficultyLevel, state.nextObstacleGap);
 
     drawScore(ctx, state.highScore, state.score);
 
-    drawGameOver(ctx, state.gameState, state.restartCooldown);
+    drawGameOver(ctx, state.gameState, state.restartCooldown, theme);
 }
 
 function drawCloud(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
-    scale: number
+    scale: number,
+    theme: RenderTheme
 ) {
     ctx.save();
 
@@ -325,9 +363,8 @@ function drawCloud(
     ctx.lineTo(0, 22);
     ctx.closePath();
 
-    ctx.globalAlpha = 0.75 ;
-    ctx.fillStyle = '#171717';
-    ctx.globalAlpha = 0.35;
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = theme.accentColor;
     ctx.fill();
 
     ctx.restore();
@@ -335,29 +372,33 @@ function drawCloud(
 
 function drawClouds(
     ctx: CanvasRenderingContext2D,
-    clouds: Cloud[]
+    clouds: Cloud[],
+    theme: RenderTheme
 ) {
     for (const cloud of clouds) {
         drawCloud(
             ctx,
             cloud.x,
             cloud.y,
-            cloud.scale
+            cloud.scale,
+            theme
         );
     }
 }
 
 function drawGround(
-    ctx: CanvasRenderingContext2D
+    ctx: CanvasRenderingContext2D,
+    theme: RenderTheme
 ) {
     const groundY = GROUND_Y;
 
     ctx.save();
 
-    ctx.strokeStyle = '#343333';
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = theme.accentColor;
 
     // Strong gameplay baseline
-    ctx.lineWidth = 1 ;
+    ctx.lineWidth = 1;
 
     ctx.beginPath();
     ctx.moveTo(0, groundY);
@@ -370,11 +411,12 @@ function drawGround(
 
 function drawGroundDetails(
     ctx: CanvasRenderingContext2D,
-    details: GroundDetail[]
+    details: GroundDetail[],
+    theme: RenderTheme
 ) {
     ctx.save();
 
-    ctx.strokeStyle = '#171717';
+    ctx.strokeStyle = theme.accentColor;
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.35;
 
@@ -395,4 +437,62 @@ function drawGroundDetails(
     }
 
     ctx.restore();
+}
+
+function drawTintedSprite(
+    ctx: CanvasRenderingContext2D,
+    image: CanvasImageSource,
+    color: string,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+) {
+    const canvas = document.createElement('canvas');
+
+    canvas.width = sw;
+    canvas.height = sh;
+
+    const tintCtx = canvas.getContext('2d');
+
+    if (!tintCtx) {
+        return;
+    }
+
+    // Draw original sprite frame
+    tintCtx.drawImage(
+        image,
+        sx,
+        sy,
+        sw,
+        sh,
+        0,
+        0,
+        sw,
+        sh,
+    );
+
+    // Keep only the sprite's visible pixels
+    tintCtx.globalCompositeOperation = 'source-in';
+
+    // Replace those pixels with the accent color
+    tintCtx.fillStyle = color;
+    tintCtx.fillRect(0, 0, sw, sh);
+
+    // Draw tinted result to the main canvas
+    ctx.drawImage(
+        canvas,
+        0,
+        0,
+        sw,
+        sh,
+        dx,
+        dy,
+        dw,
+        dh,
+    );
 }

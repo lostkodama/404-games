@@ -63,6 +63,7 @@ export function bindInput({
     };
     window.addEventListener('keydown', keyDown);
     canvas.addEventListener('pointerdown', pointerDown);
+
     return () => {
         window.removeEventListener('keydown', keyDown);
         canvas.removeEventListener('pointerdown', pointerDown);

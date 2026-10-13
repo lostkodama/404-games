@@ -1,28 +1,26 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0"
-  />
-  <title>404 Games</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&amp;display=swap" rel="stylesheet" />
+    <meta charset="UTF-8"/>
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+    />
+    <title>404 Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&amp;display=swap" rel="stylesheet"/>
 </head>
 
 <body>
-<main class="game-container">
-  <canvas
-          id="game"
-          width="840"
-          height="360"
-  >
-    Your browser does not support the HTML canvas element.
-  </canvas>
-</main>
-
-<script type="module" src="/src/main.ts"></script>
+<main id="game"></main>
+<button id="pause" type="button">Pause</button>
+<button id="resume" type="button">Resume</button>
+<button id="restart" type="button">Restart</button>
+<button id="destroy" type="button">Destroy</button>
+<script
+        type="module"
+        src="/src/main.ts"
+></script>
 </body>
 </html>

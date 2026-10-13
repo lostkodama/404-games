@@ -5,17 +5,24 @@ type GameLoopOptions = {
     onResume: () => void,
 }
 
-export function startGameLoop({maxDeltaTime, onFrame, onSuspend, onResume}: GameLoopOptions): () => void {
+export type GameLoopController = {
+    pause(): void;
+    resume(): void;
+    stop(): void;
+}
+
+export function startGameLoop({maxDeltaTime, onFrame, onSuspend, onResume}: GameLoopOptions): GameLoopController {
 
     let previousTime: number | undefined;
     let frameId: number | undefined;
-    let isSuspended = false;
+    let isSuspended = document.visibilityState === 'hidden'; // Browser / Env interruptions. Resume automatically.
+    let isPaused = false; // Pause from user. Stay pause until resumed.
     let isStopped = false;
 
     function gameLoop(currentTime: number) {
         frameId = undefined
 
-        if (isStopped || isSuspended) return
+        if (isStopped || isSuspended || isPaused) return
 
         if (previousTime === undefined) {
             previousTime = currentTime;
@@ -27,9 +34,32 @@ export function startGameLoop({maxDeltaTime, onFrame, onSuspend, onResume}: Game
 
         onFrame(deltaTime)
 
-        if(!isStopped && !isSuspended) {
+        if (!isStopped && !isSuspended && !isPaused) {
             frameId = requestAnimationFrame(gameLoop);
         }
+    }
+
+    function cancelFrame() {
+        if (frameId === undefined) {
+            return;
+        }
+
+        cancelAnimationFrame(frameId);
+        frameId = undefined;
+    }
+
+    function scheduleFrame() {
+        if (
+            isStopped ||
+            isSuspended ||
+            isPaused ||
+            frameId !== undefined
+        ) {
+            return;
+        }
+
+        previousTime = undefined;
+        frameId = requestAnimationFrame(gameLoop);
     }
 
     function handleVisibilityChange() {
@@ -46,12 +76,7 @@ export function startGameLoop({maxDeltaTime, onFrame, onSuspend, onResume}: Game
         }
 
         isSuspended = false;
-        previousTime = undefined;
-
-        if (frameId === undefined) {
-            frameId = requestAnimationFrame(gameLoop);
-        }
-
+        scheduleFrame()
         onResume()
     }
 
@@ -60,19 +85,37 @@ export function startGameLoop({maxDeltaTime, onFrame, onSuspend, onResume}: Game
         handleVisibilityChange
     );
 
-    frameId = requestAnimationFrame(gameLoop);
+    scheduleFrame()
 
-    return () => {
-        isStopped = true
+    return {
+        pause() {
+            if (isStopped || isPaused) {
+                return;
+            }
 
-        if (frameId !== undefined) {
-            cancelAnimationFrame(frameId);
-            frameId = undefined;
+            isPaused = true;
+            cancelFrame();
+        },
+        resume() {
+            if (isStopped || !isPaused) {
+                return;
+            }
+
+            isPaused = false;
+            scheduleFrame();
+        },
+        stop() {
+            if (isStopped) {
+                return;
+            }
+
+            isStopped = true;
+            cancelFrame();
+
+            document.removeEventListener(
+                'visibilitychange',
+                handleVisibilityChange,
+            );
         }
-
-        document.removeEventListener(
-            'visibilitychange',
-            handleVisibilityChange
-        );
     }
 }
