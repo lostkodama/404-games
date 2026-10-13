@@ -1,11 +1,11 @@
 import {resetInput, triggerAction} from './input/input';
-import type {GameState} from './types';
+import {type GameState, SOUND_EVENT} from './types';
 import {render} from './render/renderer';
 import {loadSprites} from './render/sprites';
 import {debugGameState} from './debug/debugGameState';
 import {startGameLoop} from "./loop/gameLoop.ts";
 import {createGameState} from "./gameState.ts";
-import {type OnSoundEvent, updateGame} from "./updateGame.ts";
+import {type OnSoundEvent, resetGame, updateGame} from "./updateGame.ts";
 import {MAX_DELTA_TIME} from "./constants.ts";
 
 export type GameSession = {
@@ -18,9 +18,14 @@ export type GameSession = {
     destroy(): void;
 };
 
+type GamePresentationOptions = {
+    accentColor: string;
+};
+
 export function startGame(
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
+    presentation: GamePresentationOptions,
     onSoundEvent: OnSoundEvent = () => {
     },
 ): GameSession {
@@ -28,7 +33,7 @@ export function startGame(
     debugGameState('initial state', state);
     const assets = loadSprites();
 
-    const stopGameLoop = startGameLoop({
+    const gameLoop = startGameLoop({
         maxDeltaTime: MAX_DELTA_TIME,
         onFrame(deltaTime) {
             const previousGameState = state.gameState;
@@ -36,7 +41,7 @@ export function startGame(
             if (state.gameState !== previousGameState) {
                 debugGameState(`${previousGameState} → ${state.gameState}`, state);
             }
-            render(ctx, canvas, state, assets);
+            render(ctx, canvas, state, assets, presentation);
         },
         onSuspend() {
             resetInput(state.input)
@@ -62,19 +67,26 @@ export function startGame(
         },
 
         pause() {
-            // wire in next
+            resetInput(state.input)
+            gameLoop.pause()
         },
 
         resume() {
-            // wire in next
+            resetInput(state.input)
+            gameLoop.resume()
         },
 
         restart() {
-            // wire in next
+            resetInput(state.input)
+            resetGame(state)
+
+            onSoundEvent(SOUND_EVENT.START) // MXN_ ??
+
+            gameLoop.resume()
         },
 
         destroy() {
-            stopGameLoop();
+            gameLoop.stop();
         },
     }
 }

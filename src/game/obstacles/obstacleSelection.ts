@@ -1,5 +1,5 @@
-import { OBSTACLE_PATTERNS } from './obstaclePatterns';
-import type { ObstaclePattern } from '../types';
+import {OBSTACLE_PATTERNS} from './obstaclePatterns';
+import type {ObstaclePattern} from '../types';
 
 export function selectObstaclePattern(
     difficultyLevel: number,

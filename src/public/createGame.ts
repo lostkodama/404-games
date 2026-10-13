@@ -4,7 +4,7 @@ import { createBrowserRuntime } from '../browser/createBrowserRuntime';
 import type { GameController } from './GameController';
 import type { GameOptions } from './GameOptions';
 
-const DEFAULT_ACCENT_COLOR = '#ff5c5c';
+const DEFAULT_ACCENT_COLOR = '#414141';
 
 export function create404Game(
     options: GameOptions,
@@ -17,10 +17,17 @@ export function create404Game(
 
     const canvas = createCanvas(container);
 
-    const runtime = createBrowserRuntime({
-        canvas,
-        accentColor,
-    });
+    let runtime;
+
+    try {
+        runtime = createBrowserRuntime({
+            canvas,
+            accentColor,
+        });
+    } catch (error) {
+        canvas.remove();
+        throw error;
+    }
 
     let isDestroyed = false;
 
@@ -56,8 +63,11 @@ export function create404Game(
 
             isDestroyed = true;
 
-            runtime.destroy();
-            canvas.remove();
+            try {
+                runtime.destroy();
+            } finally {
+                canvas.remove();
+            }
         },
     };
 }
@@ -69,21 +79,47 @@ function validateOptions(options: GameOptions): void {
 
     const { container, accentColor } = options;
 
-    if (
-        !container ||
-        typeof container !== 'object' ||
-        container.nodeType !== 1 ||
-        typeof container.appendChild !== 'function'
-    ) {
+    if (!isHTMLElement(container)) {
         throw new Error('container must be an HTML element');
     }
 
     if (
         accentColor !== undefined &&
-        typeof accentColor !== 'string'
+        (
+            typeof accentColor !== 'string' ||
+            accentColor.trim() === ''
+        )
     ) {
-        throw new Error('accentColor must be a string');
+        throw new Error('accentColor must be a non-empty string');
     }
+}
+
+function isHTMLElement(
+    value: unknown,
+): value is HTMLElement {
+    if (
+        !value ||
+        typeof value !== 'object'
+    ) {
+        return false;
+    }
+
+    const element = value as Element;
+
+    const ownerDocument = element.ownerDocument;
+
+    if (!ownerDocument) {
+        return false;
+    }
+
+    const HTMLElementConstructor =
+        ownerDocument.defaultView?.HTMLElement;
+
+    if (!HTMLElementConstructor) {
+        return false;
+    }
+
+    return value instanceof HTMLElementConstructor;
 }
 
 function createCanvas(
