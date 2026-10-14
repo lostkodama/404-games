@@ -37,6 +37,44 @@ function expectAllCleanedOnce() {
 }
 
 describe('sound resource cleanup', () => {
+    it.each(['construction', 'configuration'] as const)(
+        'rolls back every acquired audio element when later %s fails', (failureStage) => {
+            const initializationError = new Error('audio initialization failed');
+            vi.stubGlobal('Audio', class extends AudioMock {
+                constructor(src: string) {
+                    if (failureStage === 'construction' && audios.length === 2) {
+                        throw initializationError;
+                    }
+                    super(src);
+                    if (audios.length === 1) {
+                        this.pause.mockImplementationOnce(() => { throw new Error('rollback pause failed'); });
+                        this.removeAttribute.mockImplementationOnce(() => { throw new Error('rollback source removal failed'); });
+                    }
+                    if (failureStage === 'configuration' && audios.length === 3) {
+                        Object.defineProperty(this, 'volume', {
+                            set() { throw initializationError; },
+                        });
+                    }
+                }
+            });
+
+            let thrown: unknown;
+            try {
+                createSounds();
+            } catch (error) {
+                thrown = error;
+            }
+
+            expect(thrown).toBe(initializationError);
+            expect(audios).toHaveLength(failureStage === 'construction' ? 2 : 3);
+            for (const audio of audios) {
+                expect(audio.pause).toHaveBeenCalledOnce();
+                expect(audio.removeAttribute).toHaveBeenCalledExactlyOnceWith('src');
+                expect(audio.load).toHaveBeenCalledOnce();
+            }
+        },
+    );
+
     it('cleans every owned audio element once and ignores calls after disposal', async () => {
         const sounds = createSounds();
         sounds.dispose();
