@@ -13,6 +13,12 @@ export type GameLoopController = {
 }
 
 export function startGameLoop({document, maxDeltaTime, onFrame, onSuspend, onResume}: GameLoopOptions): GameLoopController {
+    const window = document.defaultView;
+    if (!window) {
+        throw new Error('Game loop document must belong to a browser window');
+    }
+    const requestFrame = window.requestAnimationFrame.bind(window);
+    const cancelRequestedFrame = window.cancelAnimationFrame.bind(window);
 
     let previousTime: number | undefined;
     let frameId: number | undefined;
@@ -36,7 +42,7 @@ export function startGameLoop({document, maxDeltaTime, onFrame, onSuspend, onRes
         onFrame(deltaTime)
 
         if (!isStopped && !isSuspended && !isPaused) {
-            frameId = requestAnimationFrame(gameLoop);
+            frameId = requestFrame(gameLoop);
         }
     }
 
@@ -45,7 +51,7 @@ export function startGameLoop({document, maxDeltaTime, onFrame, onSuspend, onRes
             return;
         }
 
-        cancelAnimationFrame(frameId);
+        cancelRequestedFrame(frameId);
         frameId = undefined;
     }
 
@@ -60,7 +66,7 @@ export function startGameLoop({document, maxDeltaTime, onFrame, onSuspend, onRes
         }
 
         previousTime = undefined;
-        frameId = requestAnimationFrame(gameLoop);
+        frameId = requestFrame(gameLoop);
     }
 
     function handleVisibilityChange() {
@@ -68,7 +74,7 @@ export function startGameLoop({document, maxDeltaTime, onFrame, onSuspend, onRes
             isSuspended = true;
 
             if (frameId !== undefined) {
-                cancelAnimationFrame(frameId);
+                cancelRequestedFrame(frameId);
                 frameId = undefined;
             }
 
