@@ -12,6 +12,7 @@ export type GameSession = {
     pressJump(): void;
     pressRestart(): void;
     getGameStatus(): GameState;
+    redraw(): void;
     pause(): void;
     resume(): void;
     restart(): void;
@@ -23,6 +24,7 @@ type GamePresentationOptions = {
 };
 
 export function startGame(
+    document: Document,
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
     presentation: GamePresentationOptions,
@@ -33,7 +35,12 @@ export function startGame(
     debugGameState('initial state', state);
     const assets = loadSprites();
 
+    function renderCurrentState() {
+        render(ctx, canvas, state, assets, presentation);
+    }
+
     const gameLoop = startGameLoop({
+        document,
         maxDeltaTime: MAX_DELTA_TIME,
         onFrame(deltaTime) {
             const previousGameState = state.gameState;
@@ -41,7 +48,7 @@ export function startGame(
             if (state.gameState !== previousGameState) {
                 debugGameState(`${previousGameState} → ${state.gameState}`, state);
             }
-            render(ctx, canvas, state, assets, presentation);
+            renderCurrentState()
         },
         onSuspend() {
             resetInput(state.input)
@@ -64,6 +71,10 @@ export function startGame(
 
         getGameStatus() {
             return state.gameState;
+        },
+
+        redraw() {
+            renderCurrentState()
         },
 
         pause() {

@@ -26,11 +26,22 @@ export function createBrowserRuntime(
         throw new Error('Unable to create 2D canvas context');
     }
 
+    const document = canvas.ownerDocument;
+    const window = document.defaultView;
+    if (!window) {
+        throw new Error('Canvas must belong to a browser window');
+    }
+
     const sounds = createSounds();
     let game: ReturnType<typeof startGame>
 
+    const resizeObserver = new ResizeObserver(() => {
+        game.redraw();
+    })
+    resizeObserver.observe(canvas)
+
     try {
-        game = startGame(canvas, context, {accentColor}, sounds.play);
+        game = startGame(document, canvas, context, {accentColor}, sounds.play);
     } catch (error) {
         try {
             sounds.dispose();
@@ -45,6 +56,7 @@ export function createBrowserRuntime(
     try {
         unbindInput = bindInput({
             canvas,
+            window,
             onJump: game.pressJump,
             onRestart: game.pressRestart,
             getGameStatus: game.getGameStatus,
@@ -87,6 +99,7 @@ export function createBrowserRuntime(
 
             runCleanup([
                 unbindInput,
+                () => resizeObserver.disconnect(),
                 game.destroy,
                 sounds.dispose,
             ]);

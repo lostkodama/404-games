@@ -1,4 +1,5 @@
 type GameLoopOptions = {
+    document: Document;
     maxDeltaTime: number;
     onFrame: (deltaTime: number) => void;
     onSuspend: () => void;
@@ -11,7 +12,7 @@ export type GameLoopController = {
     stop(): void;
 }
 
-export function startGameLoop({maxDeltaTime, onFrame, onSuspend, onResume}: GameLoopOptions): GameLoopController {
+export function startGameLoop({document, maxDeltaTime, onFrame, onSuspend, onResume}: GameLoopOptions): GameLoopController {
 
     let previousTime: number | undefined;
     let frameId: number | undefined;

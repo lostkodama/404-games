@@ -7,6 +7,7 @@ type InputActions = {
 
 type BrowserInputOptions = InputActions & {
     canvas: HTMLCanvasElement;
+    window: Window;
     getGameStatus: () => GameState;
     onInteraction?: () => void;
 };
@@ -51,6 +52,7 @@ export function bindInput({
     onInteraction = () => {},
 }: BrowserInputOptions) {
     const actions = {onJump, onRestart};
+
     const keyDown = (event: KeyboardEvent) => {
         if (!event.repeat && (event.code === 'Space' || event.code === 'ArrowUp')) {
             onInteraction();
