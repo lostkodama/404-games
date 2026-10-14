@@ -4,6 +4,49 @@ import {bindInput} from './browserInput';
 import {GAME_STATE, type GameState} from '../types';
 
 describe('browser input binding', () => {
+    it('handles keyboard input only from the supplied window and removes that listener on unbind', () => {
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        const ownerWindow = iframe.contentWindow! as Window & typeof globalThis;
+        const canvas = ownerWindow.document.createElement('canvas');
+        const onJump = vi.fn();
+        const onRestart = vi.fn();
+        const onInteraction = vi.fn();
+        const unbind = bindInput({
+            canvas,
+            window: ownerWindow,
+            onJump,
+            onRestart,
+            onInteraction,
+            getGameStatus: () => GAME_STATE.RUNNING,
+        });
+
+        try {
+            const unrelatedEvent = new KeyboardEvent('keydown', {code: 'Space', cancelable: true});
+            window.dispatchEvent(unrelatedEvent);
+            expect(onJump).not.toHaveBeenCalled();
+            expect(onInteraction).not.toHaveBeenCalled();
+            expect(unrelatedEvent.defaultPrevented).toBe(false);
+
+            const owningEvent = new ownerWindow.KeyboardEvent('keydown', {code: 'Space', cancelable: true});
+            ownerWindow.dispatchEvent(owningEvent);
+            expect(onJump).toHaveBeenCalledOnce();
+            expect(onInteraction).toHaveBeenCalledOnce();
+            expect(owningEvent.defaultPrevented).toBe(true);
+
+            unbind();
+            const afterUnbind = new ownerWindow.KeyboardEvent('keydown', {code: 'Space', cancelable: true});
+            ownerWindow.dispatchEvent(afterUnbind);
+            expect(onJump).toHaveBeenCalledOnce();
+            expect(onInteraction).toHaveBeenCalledOnce();
+            expect(onRestart).not.toHaveBeenCalled();
+            expect(afterUnbind.defaultPrevented).toBe(false);
+        } finally {
+            unbind();
+            iframe.remove();
+        }
+    });
+
     it('routes events using current status, unlocks interaction, and unbinds both listeners', () => {
         const canvas = document.createElement('canvas');
         const onJump = vi.fn();
