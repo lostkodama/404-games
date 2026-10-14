@@ -75,6 +75,41 @@ export function createBrowserRuntime(
     }
 
     let isDestroyed = false;
+    let dprQuery: MediaQueryList | undefined;
+
+    function removeDprListener() {
+        dprQuery?.removeEventListener('change', handleDprChange);
+    }
+
+    const observeDpr = () => {
+        removeDprListener();
+        dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+        dprQuery.addEventListener('change', handleDprChange);
+    };
+
+    function handleDprChange() {
+        if (isDestroyed) return;
+        observeDpr();
+        game.redraw();
+    }
+
+    try {
+        observeDpr();
+    } catch (error) {
+        isDestroyed = true;
+        try {
+            runCleanup([
+                removeDprListener,
+                unbindInput,
+                () => resizeObserver.disconnect(),
+                game.destroy,
+                sounds.dispose,
+            ]);
+        } catch {
+            // Preserve the initialization error if rollback also fails.
+        }
+        throw error;
+    }
 
     return {
         pause() {
@@ -99,6 +134,7 @@ export function createBrowserRuntime(
 
             runCleanup([
                 unbindInput,
+                removeDprListener,
                 () => resizeObserver.disconnect(),
                 game.destroy,
                 sounds.dispose,

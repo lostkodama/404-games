@@ -54,6 +54,23 @@ let resizeCallback: ResizeObserverCallback;
 const observe = vi.fn();
 const unobserve = vi.fn();
 const disconnect = vi.fn();
+let mediaQueries: Array<{
+    query: string;
+    addEventListener: ReturnType<typeof vi.fn>;
+    removeEventListener: ReturnType<typeof vi.fn>;
+    dispatchEvent: (event: Event) => boolean;
+}>;
+const matchMedia = vi.fn((query: string) => {
+    const target = new EventTarget();
+    const mediaQuery = {
+        query,
+        addEventListener: vi.fn(target.addEventListener.bind(target)),
+        removeEventListener: vi.fn(target.removeEventListener.bind(target)),
+        dispatchEvent: target.dispatchEvent.bind(target),
+    };
+    mediaQueries.push(mediaQuery);
+    return mediaQuery as unknown as MediaQueryList;
+});
 
 class ResizeObserverMock {
     constructor(callback: ResizeObserverCallback) {
@@ -66,6 +83,9 @@ class ResizeObserverMock {
 }
 
 beforeEach(() => {
+    mediaQueries = [];
+    vi.stubGlobal('matchMedia', matchMedia);
+    vi.stubGlobal('devicePixelRatio', 1);
     vi.stubGlobal('ResizeObserver', ResizeObserverMock);
     vi.clearAllMocks();
 });
@@ -298,5 +318,77 @@ describe('createBrowserRuntime', () => {
         // destroy
         runtime.destroy();
         expect(disconnect).toHaveBeenCalledOnce();
+    });
+
+    it('redraws and re-registers observation after successive DPR changes', () => {
+        const runtime = createRuntime();
+        expect(matchMedia).toHaveBeenLastCalledWith('(resolution: 1dppx)');
+
+        vi.stubGlobal('devicePixelRatio', 2);
+        mediaQueries[0].dispatchEvent(new Event('change'));
+        expect(mocks.game.redraw).toHaveBeenCalledOnce();
+        expect(matchMedia).toHaveBeenLastCalledWith('(resolution: 2dppx)');
+        expect(mediaQueries[0].removeEventListener).toHaveBeenCalledOnce();
+
+        vi.stubGlobal('devicePixelRatio', 3);
+        mediaQueries[1].dispatchEvent(new Event('change'));
+        expect(mocks.game.redraw).toHaveBeenCalledTimes(2);
+        expect(matchMedia).toHaveBeenLastCalledWith('(resolution: 3dppx)');
+        expect(mediaQueries[1].removeEventListener).toHaveBeenCalledOnce();
+        expect(mocks.game.pause).not.toHaveBeenCalled();
+        expect(mocks.game.resume).not.toHaveBeenCalled();
+        expect(mocks.game.restart).not.toHaveBeenCalled();
+
+        runtime.destroy();
+    });
+
+    it('removes DPR listeners and ignores queued changes after destroy', () => {
+        const runtime = createRuntime();
+        const queuedCallback = mediaQueries[0].addEventListener.mock.calls[0][1] as EventListener;
+
+        runtime.destroy();
+        runtime.destroy();
+
+        expect(mediaQueries[0].removeEventListener).toHaveBeenCalledExactlyOnceWith('change', queuedCallback);
+        mediaQueries[0].dispatchEvent(new Event('change'));
+        queuedCallback(new Event('change'));
+        expect(mocks.game.redraw).not.toHaveBeenCalled();
+        expect(matchMedia).toHaveBeenCalledOnce();
+    });
+
+    it('observes DPR using the canvas owning window', () => {
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        const ownerWindow = iframe.contentWindow!;
+        const addEventListener = vi.fn();
+        const removeEventListener = vi.fn();
+        const ownerMatchMedia = vi.fn(() => ({addEventListener, removeEventListener}));
+        Object.defineProperty(ownerWindow, 'devicePixelRatio', {value: 2, configurable: true});
+        Object.defineProperty(ownerWindow, 'matchMedia', {value: ownerMatchMedia, configurable: true});
+        const canvas = ownerWindow.document.createElement('canvas');
+        vi.spyOn(canvas, 'getContext').mockReturnValue({} as CanvasRenderingContext2D);
+
+        let runtime: ReturnType<typeof createBrowserRuntime> | undefined;
+        try {
+            runtime = createBrowserRuntime({canvas, accentColor: '#414141'});
+            expect(ownerMatchMedia).toHaveBeenCalledExactlyOnceWith('(resolution: 2dppx)');
+            expect(matchMedia).not.toHaveBeenCalled();
+        } finally {
+            runtime?.destroy();
+            iframe.remove();
+        }
+        expect(removeEventListener).toHaveBeenCalledOnce();
+    });
+
+    it('rolls back runtime resources when DPR observation fails', () => {
+        matchMedia.mockImplementationOnce(() => {
+            throw new Error('DPR observation failed');
+        });
+
+        expect(createRuntime).toThrow('DPR observation failed');
+        expect(mocks.unbindInput).toHaveBeenCalledOnce();
+        expect(disconnect).toHaveBeenCalledOnce();
+        expect(mocks.game.destroy).toHaveBeenCalledOnce();
+        expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
     });
 });
