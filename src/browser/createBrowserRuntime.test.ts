@@ -153,12 +153,14 @@ describe('createBrowserRuntime', () => {
 
         expect(thrownError).toBe(firstError);
         expect(mocks.unbindInput).toHaveBeenCalledOnce();
+        expect(disconnect).toHaveBeenCalledOnce();
         expect(mocks.game.destroy).toHaveBeenCalledOnce();
         expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
 
         expect(() => runtime.destroy()).not.toThrow();
 
         expect(mocks.unbindInput).toHaveBeenCalledOnce();
+        expect(disconnect).toHaveBeenCalledOnce();
         expect(mocks.game.destroy).toHaveBeenCalledOnce();
         expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
     });
@@ -251,6 +253,55 @@ describe('createBrowserRuntime', () => {
 
         expect(thrownError).toBe(initializationError);
         expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
+        expect(observe).not.toHaveBeenCalled();
+        expect(disconnect).not.toHaveBeenCalled();
+        expect(bindInput).not.toHaveBeenCalled();
+    });
+
+    it('initializes the game before observe can deliver a resize callback', () => {
+        observe.mockImplementationOnce(() => {
+            expect(startGame).toHaveBeenCalledOnce();
+            resizeCallback([], {} as ResizeObserver);
+        });
+        const runtime = createRuntime();
+        expect(mocks.game.redraw).toHaveBeenCalledOnce();
+        runtime.destroy();
+    });
+
+    it('rolls back game and audio when the ResizeObserver constructor fails', () => {
+        const initializationError = new Error('observer construction failed');
+        vi.stubGlobal('ResizeObserver', class {
+            constructor() { throw initializationError; }
+        });
+        mocks.sounds.dispose.mockImplementationOnce(() => {
+            throw new Error('audio cleanup failed');
+        });
+
+        let thrown: unknown;
+        try { createRuntime(); } catch (error) { thrown = error; }
+
+        expect(thrown).toBe(initializationError);
+        expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
+        expect(mocks.game.destroy).toHaveBeenCalledOnce();
+        expect(bindInput).not.toHaveBeenCalled();
+        expect(disconnect).not.toHaveBeenCalled();
+    });
+
+    it('disconnects and continues rollback when observe and disconnect both fail', () => {
+        const initializationError = new Error('observe failed');
+        observe.mockImplementationOnce(() => { throw initializationError; });
+        disconnect.mockImplementationOnce(() => { throw new Error('disconnect failed'); });
+
+        let thrown: unknown;
+        try { createRuntime(); } catch (error) { thrown = error; }
+
+        expect(thrown).toBe(initializationError);
+        expect(disconnect).toHaveBeenCalledOnce();
+        expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
+        expect(mocks.game.destroy).toHaveBeenCalledOnce();
+        expect(bindInput).not.toHaveBeenCalled();
+        resizeCallback([], {} as ResizeObserver);
+        expect(mocks.game.redraw).not.toHaveBeenCalled();
     });
 
     it('destroys the game and disposes sounds when input binding fails', () => {
@@ -275,9 +326,12 @@ describe('createBrowserRuntime', () => {
     });
 
     it('continues rollback and preserves the initialization error when cleanup throws', () => {
+        const initializationError = new Error('input binding failed');
         vi.mocked(bindInput).mockImplementationOnce(() => {
-            throw new Error('input binding failed');
+            throw initializationError;
         });
+
+        disconnect.mockImplementationOnce(() => { throw new Error('disconnect failed'); });
 
         mocks.sounds.dispose.mockImplementationOnce(() => {
             throw new Error('audio cleanup failed');
@@ -288,15 +342,20 @@ describe('createBrowserRuntime', () => {
         vi.spyOn(canvas, 'getContext')
             .mockReturnValue({} as CanvasRenderingContext2D);
 
-        expect(() => {
+        let thrown: unknown;
+        try {
             createBrowserRuntime({
                 canvas,
                 accentColor: '#414141',
             });
-        }).toThrow('input binding failed');
+        } catch (error) { thrown = error; }
 
+        expect(thrown).toBe(initializationError);
+        expect(disconnect).toHaveBeenCalledOnce();
         expect(mocks.game.destroy).toHaveBeenCalledOnce();
         expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
+        resizeCallback([], {} as ResizeObserver);
+        expect(mocks.game.redraw).not.toHaveBeenCalled();
     });
 
     it('redraws the game when the canvas is resized', () => {
@@ -318,6 +377,8 @@ describe('createBrowserRuntime', () => {
         // destroy
         runtime.destroy();
         expect(disconnect).toHaveBeenCalledOnce();
+        resizeCallback([], {} as ResizeObserver);
+        expect(mocks.game.redraw).toHaveBeenCalledOnce();
     });
 
     it('redraws and re-registers observation after successive DPR changes', () => {
@@ -365,6 +426,10 @@ describe('createBrowserRuntime', () => {
         const ownerMatchMedia = vi.fn(() => ({addEventListener, removeEventListener}));
         Object.defineProperty(ownerWindow, 'devicePixelRatio', {value: 2, configurable: true});
         Object.defineProperty(ownerWindow, 'matchMedia', {value: ownerMatchMedia, configurable: true});
+        const ownerResizeObserver = vi.fn(function (callback: ResizeObserverCallback) {
+            return new ResizeObserverMock(callback);
+        });
+        Object.defineProperty(ownerWindow, 'ResizeObserver', {value: ownerResizeObserver, configurable: true});
         const canvas = ownerWindow.document.createElement('canvas');
         vi.spyOn(canvas, 'getContext').mockReturnValue({} as CanvasRenderingContext2D);
 
@@ -373,6 +438,7 @@ describe('createBrowserRuntime', () => {
             runtime = createBrowserRuntime({canvas, accentColor: '#414141'});
             expect(ownerMatchMedia).toHaveBeenCalledExactlyOnceWith('(resolution: 2dppx)');
             expect(matchMedia).not.toHaveBeenCalled();
+            expect(ownerResizeObserver).toHaveBeenCalledOnce();
         } finally {
             runtime?.destroy();
             iframe.remove();

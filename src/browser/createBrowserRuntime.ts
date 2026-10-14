@@ -35,11 +35,6 @@ export function createBrowserRuntime(
     const sounds = createSounds();
     let game: ReturnType<typeof startGame>
 
-    const resizeObserver = new ResizeObserver(() => {
-        game.redraw();
-    })
-    resizeObserver.observe(canvas)
-
     try {
         game = startGame(document, canvas, context, {accentColor}, sounds.play);
     } catch (error) {
@@ -52,8 +47,15 @@ export function createBrowserRuntime(
     }
 
     let unbindInput: () => void;
+    let resizeObserver: ResizeObserver | undefined;
+    let isDestroyed = false;
 
     try {
+        resizeObserver = new window.ResizeObserver(() => {
+            if (isDestroyed) return;
+            game.redraw();
+        });
+        resizeObserver.observe(canvas);
         unbindInput = bindInput({
             canvas,
             window,
@@ -63,10 +65,12 @@ export function createBrowserRuntime(
             onInteraction: sounds.unlock,
         });
     } catch (error) {
+        isDestroyed = true;
         try {
             runCleanup([
+                () => resizeObserver?.disconnect(),
                 sounds.dispose,
-                game?.destroy,
+                game.destroy,
             ])
         } catch {
 
@@ -74,7 +78,6 @@ export function createBrowserRuntime(
         throw error;
     }
 
-    let isDestroyed = false;
     let dprQuery: MediaQueryList | undefined;
 
     function removeDprListener() {
@@ -101,7 +104,7 @@ export function createBrowserRuntime(
             runCleanup([
                 removeDprListener,
                 unbindInput,
-                () => resizeObserver.disconnect(),
+                () => resizeObserver?.disconnect(),
                 game.destroy,
                 sounds.dispose,
             ]);
@@ -135,7 +138,7 @@ export function createBrowserRuntime(
             runCleanup([
                 unbindInput,
                 removeDprListener,
-                () => resizeObserver.disconnect(),
+                () => resizeObserver?.disconnect(),
                 game.destroy,
                 sounds.dispose,
             ]);
