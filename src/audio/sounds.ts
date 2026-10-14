@@ -36,13 +36,14 @@ export function createSounds() {
             effect.audio.muted = true;
             try {
                 effect.unlocking = effect.audio.play().then(() => {
+                    if (disposed) return;
                     effect.audio.pause();
                     effect.audio.currentTime = 0;
                     effect.ready = true;
                 }).catch(() => {
                     // A later user gesture can retry denied/failed playback.
                 }).finally(() => {
-                    effect.audio.muted = muted;
+                    if (!disposed) effect.audio.muted = muted;
                     effect.unlocking = undefined;
                 });
             } catch {
@@ -65,6 +66,7 @@ export function createSounds() {
     }
 
     function setMuted(value: boolean) {
+        if (disposed) return;
         muted = value;
         for (const effect of Object.values(effects)) {
             effect.audio.muted = value || Boolean(effect.unlocking);
@@ -73,12 +75,25 @@ export function createSounds() {
     }
 
     function dispose() {
+        if (disposed) return;
         disposed = true;
+        let hasError = false;
+        let firstError: unknown;
         for (const { audio } of Object.values(effects)) {
-            audio.pause();
-            audio.removeAttribute('src');
-            audio.load();
+            for (const cleanup of [
+                () => audio.pause(),
+                () => audio.removeAttribute('src'),
+                () => audio.load(),
+            ]) {
+                try {
+                    cleanup();
+                } catch (error) {
+                    if (!hasError) firstError = error;
+                    hasError = true;
+                }
+            }
         }
+        if (hasError) throw firstError;
     }
 
     return { play, unlock, setMuted, dispose };
