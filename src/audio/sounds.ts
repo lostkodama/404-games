@@ -14,18 +14,31 @@ const EFFECTS: Record<SoundEvent, { src: string; volume: number }> = {
 export function createSounds() {
     let muted = false;
     let disposed = false;
-    const effects = Object.fromEntries(
-        Object.entries(EFFECTS).map(([name, config]) => {
-            const audio = new Audio(config.src);
-            audio.preload = 'auto';
-            audio.volume = config.volume;
-            return [name, { audio, ready: false, unlocking: undefined }];
-        }),
-    ) as Record<SoundEvent, {
+    const ownedAudio: HTMLAudioElement[] = [];
+    let effects: Record<SoundEvent, {
         audio: HTMLAudioElement;
         ready: boolean;
         unlocking: Promise<void> | undefined;
     }>;
+
+    try {
+        effects = Object.fromEntries(
+            Object.entries(EFFECTS).map(([name, config]) => {
+                const audio = new Audio(config.src);
+                ownedAudio.push(audio);
+                audio.preload = 'auto';
+                audio.volume = config.volume;
+                return [name, { audio, ready: false, unlocking: undefined }];
+            }),
+        ) as typeof effects;
+    } catch (error) {
+        try {
+            dispose();
+        } catch {
+            // Preserve the initialization error if rollback also fails.
+        }
+        throw error;
+    }
 
     // Call synchronously from a user gesture. Prime each reusable element
     // silently, since some browsers grant playback permission per element.
@@ -79,7 +92,7 @@ export function createSounds() {
         disposed = true;
         let hasError = false;
         let firstError: unknown;
-        for (const { audio } of Object.values(effects)) {
+        for (const audio of ownedAudio) {
             for (const cleanup of [
                 () => audio.pause(),
                 () => audio.removeAttribute('src'),
