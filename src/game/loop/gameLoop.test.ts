@@ -99,6 +99,80 @@ describe('startGameLoop', () => {
         );
     }
 
+    it('rejects a document without an owning window before registering listeners', () => {
+        const detachedDocument = document.implementation.createHTMLDocument();
+        const addListener = vi.spyOn(detachedDocument, 'addEventListener');
+
+        expect(() => startGameLoop({
+            document: detachedDocument,
+            maxDeltaTime: 0.1,
+            onFrame,
+            onSuspend,
+            onResume,
+        })).toThrow('Game loop document must belong to a browser window');
+        expect(addListener).not.toHaveBeenCalled();
+        expect(requestAnimationFrame).not.toHaveBeenCalled();
+    });
+
+    it.each(['visible', 'hidden'] as const)('uses owning-window RAF through startup, suspension, pause and stop when initially %s', (initialVisibility) => {
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        const ownerWindow = iframe.contentWindow!;
+        const ownerDocument = ownerWindow.document;
+        let callback: FrameRequestCallback | undefined;
+        const request = vi.fn(function (this: Window, frame: FrameRequestCallback) {
+            expect(this).toBe(ownerWindow);
+            callback = frame;
+            return 42;
+        });
+        const cancel = vi.fn(function (this: Window, id: number) {
+            expect(this).toBe(ownerWindow);
+            expect(id).toBe(42);
+        });
+        Object.defineProperty(ownerWindow, 'requestAnimationFrame', {value: request, configurable: true});
+        Object.defineProperty(ownerWindow, 'cancelAnimationFrame', {value: cancel, configurable: true});
+        const visibility = (value: DocumentVisibilityState) => {
+            Object.defineProperty(ownerDocument, 'visibilityState', {value, configurable: true});
+            ownerDocument.dispatchEvent(new Event('visibilitychange'));
+        };
+        visibility(initialVisibility);
+        const loop = startGameLoop({document: ownerDocument, maxDeltaTime: 0.1, onFrame, onSuspend, onResume});
+        try {
+            expect(request).toHaveBeenCalledTimes(initialVisibility === 'hidden' ? 0 : 1);
+            if (initialVisibility === 'hidden') visibility('visible');
+            callback!(1000);
+            expect(onFrame).toHaveBeenLastCalledWith(0);
+            expect(request).toHaveBeenCalledTimes(2);
+
+            loop.pause();
+            expect(cancel).toHaveBeenCalledTimes(1);
+            loop.resume();
+            callback!(5000);
+            expect(onFrame).toHaveBeenLastCalledWith(0);
+
+            visibility('hidden');
+            expect(cancel).toHaveBeenCalledTimes(2);
+            visibility('visible');
+            callback!(9000);
+            expect(onFrame).toHaveBeenLastCalledWith(0);
+
+            loop.stop();
+            expect(cancel).toHaveBeenCalledTimes(3);
+            const scheduled = request.mock.calls.length;
+            loop.stop();
+            loop.resume();
+            visibility('hidden');
+            visibility('visible');
+            expect(request).toHaveBeenCalledTimes(scheduled);
+            expect(cancel).toHaveBeenCalledTimes(3);
+            expect(requestAnimationFrame).not.toHaveBeenCalled();
+            expect(cancelAnimationFrame).not.toHaveBeenCalled();
+        } finally {
+            loop.stop();
+            iframe.remove();
+        }
+    });
+
     it('schedules a frame when started', () => {
         createLoop();
 
