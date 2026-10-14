@@ -46,6 +46,7 @@ export function handlePointerDown(actions: InputActions, gameState: GameState, e
 
 export function bindInput({
     canvas,
+    window,
     onJump,
     onRestart,
     getGameStatus,
