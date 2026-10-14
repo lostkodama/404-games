@@ -205,8 +205,6 @@ function drawGameOver(ctx: CanvasRenderingContext2D, gameState: GameState, resta
 }
 
 function drawPlayerFrame(ctx: CanvasRenderingContext2D, player: Player, assets: SpriteAssets, frame: number) {
-    ctx.save()
-
     const sourceX =
         frame * CAT_FRAME_WIDTH;
 
