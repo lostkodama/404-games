@@ -26,7 +26,12 @@ type RenderOptions = {
 };
 
 function prepareCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-    const pixelRatio = window.devicePixelRatio || 1;
+
+    const ownerWindow = canvas.ownerDocument.defaultView
+    if (!ownerWindow) {
+        throw new Error('Canvas must belong to a browser window')
+    }
+    const pixelRatio = ownerWindow.devicePixelRatio || 1;
     const width = Math.max(1, Math.round(canvas.clientWidth * pixelRatio));
     const height = Math.max(1, Math.round(canvas.clientHeight * pixelRatio));
 

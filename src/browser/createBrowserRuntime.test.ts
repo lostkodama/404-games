@@ -4,6 +4,7 @@
 
 import {
     beforeEach,
+    afterEach,
     describe,
     expect,
     it,
@@ -17,6 +18,7 @@ import {startGame} from "../game/Game.ts";
 // Test is intentionally mock heavy compared to core tests since this is a wiring layer
 const mocks = vi.hoisted(() => ({
     game: {
+        redraw: vi.fn(),
         pause: vi.fn(),
         resume: vi.fn(),
         restart: vi.fn(),
@@ -46,6 +48,31 @@ vi.mock('../audio/sounds', () => ({
 vi.mock('../game/input/browserInput', () => ({
     bindInput: vi.fn(() => mocks.unbindInput),
 }));
+
+let resizeCallback: ResizeObserverCallback;
+
+const observe = vi.fn();
+const unobserve = vi.fn();
+const disconnect = vi.fn();
+
+class ResizeObserverMock {
+    constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+    }
+
+    observe = observe;
+    unobserve = unobserve;
+    disconnect = disconnect;
+}
+
+beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    vi.clearAllMocks();
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
 
 describe('createBrowserRuntime', () => {
     beforeEach(() => {
@@ -250,5 +277,26 @@ describe('createBrowserRuntime', () => {
 
         expect(mocks.game.destroy).toHaveBeenCalledOnce();
         expect(mocks.sounds.dispose).toHaveBeenCalledOnce();
+    });
+
+    it('redraws the game when the canvas is resized', () => {
+
+        const canvas = document.createElement('canvas')
+        vi.spyOn(canvas, 'getContext').mockReturnValue({} as CanvasRenderingContext2D)
+
+        const runtime = createBrowserRuntime({
+            canvas,
+            accentColor: '#414141'
+        })
+
+        expect(observe).toHaveBeenCalledWith(canvas)
+
+        // resize change
+        resizeCallback!([], {} as ResizeObserver)
+        expect(mocks.game.redraw).toHaveBeenCalledOnce();
+
+        // destroy
+        runtime.destroy();
+        expect(disconnect).toHaveBeenCalledOnce();
     });
 });

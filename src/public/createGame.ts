@@ -1,8 +1,8 @@
 // src/public/createGame.ts
 
-import { createBrowserRuntime } from '../browser/createBrowserRuntime';
-import type { GameController } from './GameController';
-import type { GameOptions } from './GameOptions';
+import {createBrowserRuntime} from '../browser/createBrowserRuntime';
+import type {GameController} from './GameController';
+import type {GameOptions} from './GameOptions';
 
 const DEFAULT_ACCENT_COLOR = '#414141';
 
@@ -11,7 +11,7 @@ export function create404Game(
 ): GameController {
     validateOptions(options);
 
-    const { container } = options;
+    const {container} = options;
     const accentColor =
         options.accentColor ?? DEFAULT_ACCENT_COLOR;
 
@@ -77,7 +77,7 @@ function validateOptions(options: GameOptions): void {
         throw new Error('options are required');
     }
 
-    const { container, accentColor } = options;
+    const {container, accentColor} = options;
 
     if (!isHTMLElement(container)) {
         throw new Error('container must be an HTML element');
@@ -122,13 +122,21 @@ function isHTMLElement(
     return value instanceof HTMLElementConstructor;
 }
 
+
 function createCanvas(
     container: HTMLElement,
 ): HTMLCanvasElement {
     const canvas =
         container.ownerDocument.createElement('canvas');
 
-    container.appendChild(canvas);
+    canvas.style.display = 'block'
+    canvas.style.width = '100%'
+    canvas.style.height = 'auto'
+    canvas.style.aspectRatio = '21 / 9'
+    canvas.style.background = 'white'
+    canvas.style.touchAction = 'none'
+
+    container.appendChild(canvas) // TODO: MXN_
 
     return canvas;
 }

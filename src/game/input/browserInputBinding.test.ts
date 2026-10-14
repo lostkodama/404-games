@@ -11,7 +11,7 @@ describe('browser input binding', () => {
         const onInteraction = vi.fn();
         let status: GameState = GAME_STATE.READY;
         const unbind = bindInput({
-            canvas, onJump, onRestart, onInteraction,
+            canvas, window, onJump, onRestart, onInteraction,
             getGameStatus: () => status,
         });
         const key = (code: string, repeat = false) => {

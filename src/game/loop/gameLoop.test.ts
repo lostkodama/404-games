@@ -61,6 +61,7 @@ describe('startGameLoop', () => {
 
     function createLoop(): GameLoopController {
         const loop = startGameLoop({
+            document,
             maxDeltaTime: 0.1,
             onFrame,
             onSuspend,
