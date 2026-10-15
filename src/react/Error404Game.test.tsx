@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import {StrictMode, act} from 'react';
+import {StrictMode, act, createRef, useLayoutEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {create404Game} from '../public';
-import {Error404Game} from './Error404Game';
+import {Error404Game, type Error404GameHandle, type Error404GameProps} from './index';
 
 vi.mock('../public', () => ({create404Game: vi.fn()}));
 
@@ -51,6 +51,114 @@ async function render(accentColor?: string) {
 }
 
 describe('Error404Game React lifecycle', () => {
+    it('exposes only controls through the React entry and always targets the active game', async () => {
+        const ref = createRef<Error404GameHandle>();
+        expect(ref.current).toBeNull();
+        await act(async () => root!.render(<Error404Game ref={ref} accentColor="#123456" />));
+        const handle = ref.current!;
+        expect(Object.keys(handle).sort()).toEqual(['pause', 'restart', 'resume']);
+        expect('destroy' in handle).toBe(false);
+        for (const action of ['pause', 'resume', 'restart'] as const) {
+            handle[action]();
+            expect(controllers[0][action]).toHaveBeenCalledOnce();
+        }
+
+        await act(async () => root!.render(<Error404Game ref={ref} accentColor="#abcdef" />));
+        expect(controllers[0].destroy).toHaveBeenCalledOnce();
+        for (const action of ['pause', 'resume', 'restart'] as const) {
+            ref.current![action]();
+            expect(controllers[0][action]).toHaveBeenCalledOnce();
+            expect(controllers[1][action]).toHaveBeenCalledOnce();
+        }
+
+        await unmount();
+        expect(ref.current).toBeNull();
+        expect(() => {
+            handle.pause();
+            handle.resume();
+            handle.restart();
+        }).not.toThrow();
+        for (const action of ['pause', 'resume', 'restart'] as const) {
+            expect(controllers[0][action]).toHaveBeenCalledOnce();
+            expect(controllers[1][action]).toHaveBeenCalledOnce();
+        }
+    });
+
+    it('safely ignores controls before the creation effect runs', async () => {
+        const ref = createRef<Error404GameHandle>();
+        const beforeCreation = vi.fn();
+        function Consumer() {
+            useLayoutEffect(() => {
+                expect(create404Game).not.toHaveBeenCalled();
+                expect(ref.current).not.toBeNull();
+                ref.current!.pause();
+                ref.current!.resume();
+                ref.current!.restart();
+                beforeCreation();
+            }, []);
+            return <Error404Game ref={ref} />;
+        }
+        await act(async () => root!.render(<Consumer />));
+        expect(beforeCreation).toHaveBeenCalledOnce();
+        for (const action of ['pause', 'resume', 'restart'] as const) {
+            expect(controllers[0][action]).not.toHaveBeenCalled();
+        }
+    });
+
+    it('applies host styling without passing it to the factory or recreating the game', async () => {
+        const props: Error404GameProps = {className: 'game-host', style: {width: '640px', marginTop: 8}};
+        await act(async () => root!.render(<Error404Game {...props} />));
+        const container = host.firstElementChild as HTMLDivElement;
+        expect(container.className).toBe('game-host');
+        expect(container.style.width).toBe('640px');
+        expect(container.style.marginTop).toBe('8px');
+        expect(create404Game).toHaveBeenCalledExactlyOnceWith({container});
+
+        await act(async () => root!.render(<Error404Game className="updated" style={{width: '100%'}} />));
+        expect(host.firstElementChild).toBe(container);
+        expect(container.className).toBe('updated');
+        expect(container.style.width).toBe('100%');
+        expect(container.style.marginTop).toBe('');
+        expect(create404Game).toHaveBeenCalledOnce();
+        expect(controllers[0].destroy).not.toHaveBeenCalled();
+    });
+
+    it('does not retain a destroyed controller through a handle when replacement creation fails', async () => {
+        const ref = createRef<Error404GameHandle>();
+        await act(async () => root!.render(<Error404Game ref={ref} accentColor="#123456" />));
+        const handle = ref.current!;
+        const error = new Error('replacement failed');
+        vi.mocked(create404Game).mockImplementationOnce(() => { throw error; });
+        await expect(act(async () => root!.render(<Error404Game ref={ref} accentColor="#abcdef" />))).rejects.toBe(error);
+        expect(ref.current).toBeNull();
+        expect(controllers[0].destroy).toHaveBeenCalledOnce();
+        handle.pause();
+        handle.resume();
+        handle.restart();
+        for (const action of ['pause', 'resume', 'restart'] as const) {
+            expect(controllers[0][action]).not.toHaveBeenCalled();
+        }
+    });
+
+    it('keeps the handle current across Strict Mode cleanup and recreation', async () => {
+        const ref = createRef<Error404GameHandle>();
+        await act(async () => root!.render(<StrictMode><Error404Game ref={ref} /></StrictMode>));
+        expect(active.size).toBe(1);
+        const current = controllers.at(-1)!;
+        ref.current!.pause();
+        expect(current.pause).toHaveBeenCalledOnce();
+        for (const controller of controllers.slice(0, -1)) {
+            expect(controller.pause).not.toHaveBeenCalled();
+            expect(controller.destroy).toHaveBeenCalledOnce();
+        }
+        const handle = ref.current!;
+        await unmount();
+        expect(ref.current).toBeNull();
+        handle.pause();
+        expect(current.pause).toHaveBeenCalledOnce();
+        expect(active.size).toBe(0);
+    });
+
     it('creates one game using its internal div and leaves defaults to the factory', async () => {
         await render();
         const container = host.firstElementChild;
