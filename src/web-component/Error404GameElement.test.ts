@@ -5,7 +5,7 @@ import {Error404GameElement} from './Error404GameElement';
 
 vi.mock('../public', () => ({create404Game: vi.fn()}));
 
-// Registration is local to this test environment; production registration is Group 2.
+// Registration is local to this test environment.
 customElements.define('error-404-game', Error404GameElement);
 
 function createController() {
@@ -197,19 +197,122 @@ describe('Error404GameElement lifecycle', () => {
         }
     });
 
-    it('reads the current accent attribute at creation without reacting to changes', () => {
+    it('observes accent-color and recreates the connected game with its latest value', () => {
+        expect(Error404GameElement.observedAttributes).toContain('accent-color');
         const element = createElement();
         element.setAttribute('accent-color', '#123456');
         document.body.appendChild(element);
         expect(create404Game).toHaveBeenLastCalledWith({container: element, accentColor: '#123456'});
 
         element.setAttribute('accent-color', '#abcdef');
-        expect(create404Game).toHaveBeenCalledOnce();
-        expect(controllers[0].destroy).not.toHaveBeenCalled();
+        expect(create404Game).toHaveBeenCalledTimes(2);
+        expect(controllers[0].destroy).toHaveBeenCalledOnce();
+        expect(create404Game).toHaveBeenLastCalledWith({container: element, accentColor: '#abcdef'});
+        element.pause();
+        expect(controllers[0].pause).not.toHaveBeenCalled();
+        expect(controllers[1].pause).toHaveBeenCalledOnce();
+
+        element.setAttribute('accent-color', '#abcdef');
+        element.attributeChangedCallback('accent-color', '#abcdef', '#abcdef');
+        expect(create404Game).toHaveBeenCalledTimes(2);
+        expect(controllers[1].destroy).not.toHaveBeenCalled();
+    });
+
+    it('recreates for missing-to-value and value-to-missing changes without supplying a wrapper default', () => {
+        const element = createElement();
+        document.body.appendChild(element);
+        element.setAttribute('accent-color', '#123456');
+        expect(controllers[0].destroy).toHaveBeenCalledOnce();
+        expect(create404Game).toHaveBeenLastCalledWith({container: element, accentColor: '#123456'});
+
+        element.removeAttribute('accent-color');
+        expect(controllers[1].destroy).toHaveBeenCalledOnce();
+        expect(create404Game).toHaveBeenCalledTimes(3);
+        expect(create404Game).toHaveBeenLastCalledWith({container: element});
+    });
+
+    it('does not create games for disconnected attribute changes and uses the latest value on reconnection', () => {
+        const element = createElement();
+        element.setAttribute('accent-color', '#123456');
+        element.setAttribute('accent-color', '#654321');
+        expect(create404Game).not.toHaveBeenCalled();
+        document.body.appendChild(element);
+        expect(create404Game).toHaveBeenLastCalledWith({container: element, accentColor: '#654321'});
 
         element.remove();
+        element.setAttribute('accent-color', '#abcdef');
+        expect(create404Game).toHaveBeenCalledOnce();
         document.body.appendChild(element);
         expect(create404Game).toHaveBeenCalledTimes(2);
         expect(create404Game).toHaveBeenLastCalledWith({container: element, accentColor: '#abcdef'});
+    });
+
+    it('stops recreation after destruction failure, releases the old controller, and can reconnect', () => {
+        const element = createElement();
+        document.body.appendChild(element);
+        const oldController = controllers[0];
+        const destructionError = new Error('attribute cleanup failed');
+        oldController.destroy.mockImplementationOnce(() => { throw destructionError; });
+        const errors: unknown[] = [];
+        const onError = (event: ErrorEvent) => {
+            errors.push(event.error);
+            event.preventDefault();
+        };
+        window.addEventListener('error', onError);
+        try {
+            element.setAttribute('accent-color', '#abcdef');
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toBe(destructionError);
+            expect(create404Game).toHaveBeenCalledOnce();
+            element.pause();
+            element.resume();
+            element.restart();
+            for (const method of ['pause', 'resume', 'restart'] as const) {
+                expect(oldController[method]).not.toHaveBeenCalled();
+            }
+            element.remove();
+            expect(oldController.destroy).toHaveBeenCalledOnce();
+            document.body.appendChild(element);
+            expect(create404Game).toHaveBeenCalledTimes(2);
+            expect(create404Game).toHaveBeenLastCalledWith({container: element, accentColor: '#abcdef'});
+            element.restart();
+            expect(controllers[1].restart).toHaveBeenCalledOnce();
+        } finally {
+            element.remove();
+            window.removeEventListener('error', onError);
+        }
+    });
+
+    it('preserves recreation initialization errors and recovers on a later attribute change', () => {
+        const element = createElement();
+        document.body.appendChild(element);
+        const initializationError = new Error('replacement initialization failed');
+        vi.mocked(create404Game).mockImplementationOnce(() => { throw initializationError; });
+        const errors: unknown[] = [];
+        const onError = (event: ErrorEvent) => {
+            errors.push(event.error);
+            event.preventDefault();
+        };
+        window.addEventListener('error', onError);
+        try {
+            element.setAttribute('accent-color', '#123456');
+            expect(errors[0]).toBe(initializationError);
+            expect(controllers[0].destroy).toHaveBeenCalledOnce();
+            element.pause();
+            element.resume();
+            element.restart();
+            for (const method of ['pause', 'resume', 'restart'] as const) {
+                expect(controllers[0][method]).not.toHaveBeenCalled();
+            }
+            element.setAttribute('accent-color', '#abcdef');
+            expect(create404Game).toHaveBeenCalledTimes(3);
+            expect(create404Game).toHaveBeenLastCalledWith({container: element, accentColor: '#abcdef'});
+            element.pause();
+            expect(controllers[1].pause).toHaveBeenCalledOnce();
+            expect(errors).toHaveLength(1);
+        } finally {
+            element.remove();
+            window.removeEventListener('error', onError);
+        }
     });
 });
