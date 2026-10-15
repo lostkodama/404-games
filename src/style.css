@@ -16,26 +16,23 @@ body {
   background: #f5f5f5;
 }
 
-#game {
+#demo {
   width: min(100%, 900px);
   padding: 16px;
   touch-action: manipulation;
 }
 
-/*.game-container {*/
-/*  width: min(100%, 900px);*/
-/*  padding: 16px;*/
-/*  touch-action: manipulation;*/
-/*}*/
-
-canvas {
+error-404-game {
   display: block;
+}
 
-  width: 100%;
-  height: auto;
-  aspect-ratio: 21 / 9;
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
 
-  background: white;
-  /*means canvas will handle its own pointer gestures*/
-  touch-action: none;
+.controls button {
+  padding: 8px 16px;
+  cursor: pointer;
 }
