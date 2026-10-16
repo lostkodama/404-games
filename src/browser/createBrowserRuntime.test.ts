@@ -12,8 +12,8 @@ import {
 } from 'vitest';
 
 import {createBrowserRuntime} from './createBrowserRuntime';
-import {bindInput} from "../game/input/browserInput.ts";
-import {startGame} from "../game/Game.ts";
+import {bindInput} from "../game/runner/input/browserInput.ts";
+import {startGame} from "../game/runner/Game.ts";
 
 // Test is intentionally mock heavy compared to core tests since this is a wiring layer
 const mocks = vi.hoisted(() => ({

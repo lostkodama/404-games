@@ -1,8 +1,8 @@
 // src/browser/createBrowserRuntime.ts
 
 import {createSounds} from "../audio/sounds.ts";
-import {startGame} from "../game/Game.ts";
-import {bindInput} from "../game/input/browserInput.ts";
+import {startGame} from "../game/runner/Game.ts";
+import {bindInput} from "../game/runner/input/browserInput.ts";
 
 export type GameRuntime = {
     pause(): void;

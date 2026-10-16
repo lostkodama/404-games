@@ -2,7 +2,7 @@ import startUrl from './assets/start.wav?url&no-inline';
 import jumpUrl from './assets/jump.wav?url&no-inline';
 import gameOverUrl from './assets/game-over.wav?url&no-inline';
 import levelUpUrl from './assets/level-up.wav?url&no-inline';
-import type {SoundEvent} from "../game/types.ts";
+import type {SoundEvent} from "../game/runner/types.ts";
 
 const EFFECTS: Record<SoundEvent, { src: string; volume: number }> = {
     start: { src: startUrl, volume: 0.3 },
