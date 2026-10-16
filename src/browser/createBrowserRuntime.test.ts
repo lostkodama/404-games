@@ -37,7 +37,7 @@ const mocks = vi.hoisted(() => ({
     unbindInput: vi.fn(),
 }));
 
-vi.mock('../game/Game', () => ({
+vi.mock('../game/runner/Game', () => ({
     startGame: vi.fn(() => mocks.game),
 }));
 
@@ -45,11 +45,34 @@ vi.mock('../audio/sounds', () => ({
     createSounds: vi.fn(() => mocks.sounds),
 }));
 
-vi.mock('../game/input/browserInput', () => ({
+vi.mock('../game/runner/input/browserInput', () => ({
     bindInput: vi.fn(() => mocks.unbindInput),
 }));
 
 let resizeCallback: ResizeObserverCallback;
+
+function createCanvasContextMock(): CanvasRenderingContext2D {
+    return {
+        setTransform: vi.fn(),
+        getTransform: vi.fn(() => ({a: 1, b: 0, c: 0, d: 1, e: 0, f: 0})),
+        clearRect: vi.fn(),
+        fillRect: vi.fn(),
+        strokeRect: vi.fn(),
+        beginPath: vi.fn(),
+        closePath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        arc: vi.fn(),
+        fill: vi.fn(),
+        stroke: vi.fn(),
+        fillText: vi.fn(),
+        drawImage: vi.fn(),
+        save: vi.fn(),
+        restore: vi.fn(),
+        translate: vi.fn(),
+        scale: vi.fn(),
+    } as unknown as CanvasRenderingContext2D;
+}
 
 const observe = vi.fn();
 const unobserve = vi.fn();
@@ -103,7 +126,7 @@ describe('createBrowserRuntime', () => {
         const canvas = document.createElement('canvas');
 
         vi.spyOn(canvas, 'getContext')
-            .mockReturnValue({} as CanvasRenderingContext2D);
+            .mockReturnValue(createCanvasContextMock());
 
         return createBrowserRuntime({
             canvas,
@@ -223,7 +246,7 @@ describe('createBrowserRuntime', () => {
         const canvas = document.createElement('canvas');
 
         vi.spyOn(canvas, 'getContext')
-            .mockReturnValue({} as CanvasRenderingContext2D);
+            .mockReturnValue(createCanvasContextMock());
 
         expect(() => {
             createBrowserRuntime({
@@ -312,7 +335,7 @@ describe('createBrowserRuntime', () => {
         const canvas = document.createElement('canvas');
 
         vi.spyOn(canvas, 'getContext')
-            .mockReturnValue({} as CanvasRenderingContext2D);
+            .mockReturnValue(createCanvasContextMock());
 
         expect(() => {
             createBrowserRuntime({
@@ -340,7 +363,7 @@ describe('createBrowserRuntime', () => {
         const canvas = document.createElement('canvas');
 
         vi.spyOn(canvas, 'getContext')
-            .mockReturnValue({} as CanvasRenderingContext2D);
+            .mockReturnValue(createCanvasContextMock());
 
         let thrown: unknown;
         try {
@@ -361,7 +384,7 @@ describe('createBrowserRuntime', () => {
     it('redraws the game when the canvas is resized', () => {
 
         const canvas = document.createElement('canvas')
-        vi.spyOn(canvas, 'getContext').mockReturnValue({} as CanvasRenderingContext2D)
+        vi.spyOn(canvas, 'getContext').mockReturnValue(createCanvasContextMock())
 
         const runtime = createBrowserRuntime({
             canvas,
@@ -431,7 +454,7 @@ describe('createBrowserRuntime', () => {
         });
         Object.defineProperty(ownerWindow, 'ResizeObserver', {value: ownerResizeObserver, configurable: true});
         const canvas = ownerWindow.document.createElement('canvas');
-        vi.spyOn(canvas, 'getContext').mockReturnValue({} as CanvasRenderingContext2D);
+        vi.spyOn(canvas, 'getContext').mockReturnValue(createCanvasContextMock());
 
         let runtime: ReturnType<typeof createBrowserRuntime> | undefined;
         try {
