@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "A lightweight 404-page game library with JavaScript, Web Component, and React APIs.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lostkodama/404-games.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lostkodama/404-games/issues"
+  },
+  "homepage": "https://github.com/lostkodama/404-games#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/types/public/index.d.ts",
