@@ -1,10 +1,11 @@
-# Library build — Phase 7, Groups 1–2
+# Library build — Phase 7, Groups 1–3
 
 ## Commands
 
 - `npm run build`: Core/application typechecks, library JavaScript/declarations, and package checks.
 - `npm run build:lib`: emit the ESM library and declarations to `dist`.
 - `npm run check:package`: validate existing library output and public consumer types.
+- `npm run check:consumers`: build/check the library, pack it, install it into isolated consumers, and validate those installations.
 - `npm run build:demo`: build both demo pages to `dist-demo`.
 - `npm run dev` / `npm run preview`: run/preview the demos; the React demo is `/react.html`.
 
@@ -50,3 +51,27 @@ audio rejection handling remain unchanged.
 
 Only `dist` is allowlisted for packaging. Demos/HMR bootstrap code are excluded. The package
 remains private; this work does not publish it or finalize release metadata.
+
+## Installed-consumer validation
+
+After `npm ci`, run `npm run check:consumers` in CI or locally. It builds the library first,
+then uses a real `npm pack` tarball to install external fixture projects in a temporary OS
+directory, outside this repository's module-resolution tree. Nothing is published.
+
+- The plain JS/TS and Web Component fixtures install only `404-games` and verify that React
+  and ReactDOM cannot resolve. They exercise the actual factory and element against a jsdom
+  browser environment with controlled Canvas/RAF/media APIs, check cleanup, and read every
+  runtime-requested asset from the installed package.
+- The React fixture installs its own React and types from tarballs packed from the project's
+  locked development dependencies (`react`, `@types/react`, and `csstype`). It verifies import
+  and element creation, consumer-owned React resolution, and the absence of a ReactDOM requirement.
+- TypeScript checks each fixture with NodeNext and bundler resolution. All three fixtures
+  are rebundled under a nested site base, with all six assets automatically emitted.
+- Packed file metadata, installed file sizes, maps, media, and rejected internal imports are
+  checked against the actual installed artifact, not source-tree imports.
+
+Packing and installation run offline with lifecycle scripts disabled. They use a disposable
+npm cache and the already installed development dependencies; registry downloads are not needed
+after `npm ci`. Temporary projects, tarballs, cache, and build intermediates are removed in a
+`finally` block on success or failure. An interrupted process may leave a directory named
+`404-games-consumers-*` in the OS temporary directory.
