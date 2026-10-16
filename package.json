@@ -3,12 +3,38 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/public/index.d.ts",
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/types/public/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./web-component": {
+      "types": "./dist/types/web-component/index.d.ts",
+      "import": "./dist/web-component.js"
+    },
+    "./react": {
+      "types": "./dist/types/react/index.d.ts",
+      "import": "./dist/react.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:core && tsc && vite build",
+    "build": "npm run check:core && tsc --noEmit && npm run build:lib && npm run check:package",
+    "build:lib": "vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json",
+    "build:demo": "npm run check:core && tsc --noEmit && vite build",
+    "check:package": "node scripts/check-package.mjs",
     "check:core": "tsc -p tsconfig.core.json",
     "preview": "vite preview",
     "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {"optional": true}
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

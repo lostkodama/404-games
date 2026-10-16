@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src",
+    "outDir": "dist/types"
+  },
+  "include": [
+    "src/public/index.ts",
+    "src/web-component/index.ts",
+    "src/react/index.ts"
+  ],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

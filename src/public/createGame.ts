@@ -1,8 +1,8 @@
 // src/public/createGame.ts
 
 import {createBrowserRuntime} from '../browser/createBrowserRuntime';
-import type {GameController} from './GameController';
-import type {GameOptions} from './GameOptions';
+import type {GameController} from './GameController.js';
+import type {GameOptions} from './GameOptions.js';
 
 const DEFAULT_ACCENT_COLOR = '#414141';
 
