@@ -1,6 +1,7 @@
 import {defineConfig} from 'vite';
 
 export default defineConfig({
+    base: './',
     plugins: [{
         name: 'facade-source-maps',
         generateBundle(_options, bundle) {
@@ -33,6 +34,9 @@ export default defineConfig({
         },
         rolldownOptions: {
             external: (id) => id === 'react' || id.startsWith('react/'),
+            output: {
+                assetFileNames: 'assets/[name]-[hash][extname]',
+            },
         },
     },
 });

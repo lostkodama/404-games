@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import ts from 'typescript';
 import {JSDOM} from 'jsdom';
+import {build} from 'vite';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const dist = path.join(root, 'dist');
@@ -16,12 +17,22 @@ assert(!pkg.peerDependencies['react-dom']);
 const files = await readdir(dist, {recursive: true});
 assert(!files.some((file) => /(?:\.html$|\.cjs$|\.test\.|react-demo|^main\.)/.test(file)), 'Demo/test/CommonJS artifacts found');
 const imports = new Map();
+const assetReferences = [];
 for (const file of files.filter((file) => file.endsWith('.js'))) {
     const filename = path.join(dist, file);
     const code = await readFile(filename, 'utf8');
     const source = ts.createSourceFile(filename, code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
     const dependencies = [];
     function visit(node) {
+        if (ts.isStringLiteral(node)) {
+            assert(!/^\/(?:sprites|audio)(?:\/|$)/.test(node.text), `Root-relative asset URL in ${file}`);
+            assert(!/^data:(?:image|audio)\//.test(node.text), `Inlined media in ${file}`);
+        }
+        if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'URL'
+            && node.arguments?.length === 2 && ts.isStringLiteral(node.arguments[0])
+            && node.arguments[1].getText(source) === 'import.meta.url') {
+            assetReferences.push({file, url: node.arguments[0].text});
+        }
         if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
             dependencies.push(node.moduleSpecifier.text);
         }
@@ -42,6 +53,70 @@ for (const file of files.filter((file) => file.endsWith('.js'))) {
     assert.equal(map.version, 3);
     assert(!map.sources.some((source) => /node_modules\/(?:react|react-dom)(?:\/|$)/.test(source)), 'React bundled into output');
     assert(!map.sources.some((source) => /src\/(?:main\.ts|react-demo\/)|\.test\./.test(source)), 'Demo/tests bundled into output');
+}
+
+const requiredAssets = [
+    'src/game/render/assets/car.png',
+    'src/game/render/assets/cat-run-jump.png',
+    'src/audio/assets/start.wav',
+    'src/audio/assets/jump.wav',
+    'src/audio/assets/game-over.wav',
+    'src/audio/assets/level-up.wav',
+];
+assert(pkg.files.includes('dist'), 'Package must include emitted assets');
+const referencedAssets = new Set();
+for (const {file, url} of assetReferences) {
+    assert(!/^(?:\/|[a-z]+:)/i.test(url), `Asset is not module-relative: ${url}`);
+    const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(file), url));
+    assert(resolved.startsWith('assets/'), `Asset escapes package assets: ${url}`);
+    await access(path.join(dist, resolved));
+    referencedAssets.add(resolved);
+    const deployed = new URL(url, `https://example.test/nested/package/${file}`);
+    assert(deployed.pathname.startsWith('/nested/package/assets/'), 'Asset depends on site root');
+}
+assert.equal(referencedAssets.size, requiredAssets.length, 'Missing or unreferenced media assets');
+const emittedContents = await Promise.all([...referencedAssets].map((asset) => readFile(path.join(dist, asset))));
+for (const asset of requiredAssets) {
+    const source = await readFile(path.join(root, asset));
+    assert(emittedContents.some((content) => content.equals(source)), `Asset missing or altered: ${asset}`);
+}
+
+// Rebundle the actual distributed entries as a nested-site consumer, without copying assets.
+const consumerId = '\0asset-consumer';
+const consumerBuild = await build({
+    configFile: false,
+    root,
+    base: '/nested/app/',
+    publicDir: false,
+    logLevel: 'error',
+    plugins: [{
+        name: 'asset-consumer',
+        resolveId(id) { if (id === 'virtual:asset-consumer') return consumerId; },
+        load(id) {
+            if (id === consumerId) return `
+                export {create404Game} from '404-games';
+                export {Error404GameElement, registerError404Game} from '404-games/web-component';
+                export {Error404Game} from '404-games/react';
+            `;
+        },
+    }],
+    build: {
+        write: false,
+        minify: false,
+        assetsInlineLimit: 0,
+        rolldownOptions: {
+            input: 'virtual:asset-consumer',
+            preserveEntrySignatures: 'strict',
+            external: (id) => id === 'react' || id.startsWith('react/'),
+        },
+    },
+});
+const consumerOutput = [consumerBuild].flat().flatMap((bundle) => bundle.output);
+const consumerAssets = consumerOutput.filter((item) => item.type === 'asset' && /\.(png|wav)$/.test(item.fileName));
+assert.equal(consumerAssets.length, requiredAssets.length, 'Consumer build lost package assets');
+const consumerCode = consumerOutput.filter((item) => item.type === 'chunk').map((item) => item.code).join('\n');
+for (const asset of consumerAssets) {
+    assert(consumerCode.includes(`/nested/app/${asset.fileName}`), `Consumer asset URL not rebased: ${asset.fileName}`);
 }
 
 function externalDependencies(filename, visited = new Set()) {
@@ -123,4 +198,4 @@ for (const moduleResolution of [ts.ModuleResolutionKind.NodeNext, ts.ModuleResol
     }));
 }
 
-console.log('Package checks passed: ESM exports, declarations, source maps, React isolation, explicit registration, and consumer types.');
+console.log('Package checks passed: ESM exports, declarations, source maps, React isolation, explicit registration, consumer types, and emitted assets through a nested consumer build.');

@@ -1,7 +1,7 @@
-import startUrl from './assets/start.wav?url';
-import jumpUrl from './assets/jump.wav?url';
-import gameOverUrl from './assets/game-over.wav?url';
-import levelUpUrl from './assets/level-up.wav?url';
+import startUrl from './assets/start.wav?url&no-inline';
+import jumpUrl from './assets/jump.wav?url&no-inline';
+import gameOverUrl from './assets/game-over.wav?url&no-inline';
+import levelUpUrl from './assets/level-up.wav?url&no-inline';
 import type {SoundEvent} from "../game/types.ts";
 
 const EFFECTS: Record<SoundEvent, { src: string; volume: number }> = {

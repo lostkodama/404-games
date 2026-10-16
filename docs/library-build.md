@@ -1,4 +1,4 @@
-# Library build — Phase 7, Group 1
+# Library build — Phase 7, Groups 1–2
 
 ## Commands
 
@@ -30,14 +30,23 @@ while non-React consumers need not install it. ReactDOM remains development/demo
 
 Package checks import the built entries, verify registration behavior and private-path rejection,
 inspect JavaScript import graphs/source maps, and compile a typed consumer against package exports
-using both NodeNext and bundler module resolution.
+using both NodeNext and bundler module resolution. They also check all six media files against
+their source bytes, reject root-relative/inlined media, and rebundle the distributed entries
+as a consumer hosted under `/nested/app/` to verify automatic asset emission and URL rebasing.
 
-## Deferred to Group 2
+## Package assets
 
-Asset behavior has not been changed. Vite's library build currently inlines the imported audio
-URLs, which makes the shared implementation chunk large. Sprites still use root-relative
-`/sprites/...` URLs and are not copied into the library output. Consumer asset delivery and URL
-resolution must be completed in Group 2 before the package is ready for external use.
+The two sprite sheets live beside the sprite loader in `src/game/render/assets`; four sounds
+live in `src/audio/assets`. Static `?url&no-inline` imports let Vite emit all six as separate
+hashed files in `dist/assets`, rather than inline media into JavaScript. The library uses
+module-relative `new URL(..., import.meta.url)` references, so asset resolution does not depend
+on the consuming page's site root. ESM-aware consumer bundlers such as Vite can rebundle those
+references and emit the assets automatically. When serving the built ESM directly, serve the
+package's `dist` tree intact, including `assets` and shared JavaScript chunks.
+
+No public-directory copy step, wrapper-specific setup, or asset-path option is required. Both
+demos use the same source imports and relative build base. Existing image fallback flags and
+audio rejection handling remain unchanged.
 
 Only `dist` is allowlisted for packaging. Demos/HMR bootstrap code are excluded. The package
 remains private; this work does not publish it or finalize release metadata.
