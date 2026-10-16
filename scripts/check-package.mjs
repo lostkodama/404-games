@@ -56,8 +56,8 @@ for (const file of files.filter((file) => file.endsWith('.js'))) {
 }
 
 const requiredAssets = [
-    'src/game/render/assets/car.png',
-    'src/game/render/assets/cat-run-jump.png',
+    'src/game/runner/render/assets/car.png',
+    'src/game/runner/render/assets/cat-run-jump.png',
     'src/audio/assets/start.wav',
     'src/audio/assets/jump.wav',
     'src/audio/assets/game-over.wav',

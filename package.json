@@ -1,7 +1,7 @@
 {
   "name": "404-games",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "A lightweight 404-page game library with JavaScript, Web Component, and React APIs.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/types/public/index.d.ts",
