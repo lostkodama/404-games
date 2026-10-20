@@ -1,10 +1,12 @@
 import type { ObstacleSprite, SpriteAssets } from './spriteTypes';
 import {OBSTACLE_CONFIG, type ObstacleConfigSprite} from '../obstacles/obstacleConfig';
 import type {ObstacleType} from '../types';
+import carUrl from './assets/car.png?url&no-inline';
+import catUrl from './assets/cat-run-jump.png?url&no-inline';
 
-// Standalone deployment paths belong to the browser loader, not gameplay metadata.
+// Asset URLs belong to the browser loader, not gameplay metadata.
 const OBSTACLE_SPRITE_URLS: Partial<Record<ObstacleType, string>> = {
-    car: '/sprites/car.png',
+    car: carUrl,
 };
 
 function loadObstacleSprite(config: ObstacleConfigSprite, src: string): ObstacleSprite {
@@ -44,6 +46,6 @@ export function loadSprites(): SpriteAssets {
         ) as SpriteAssets['obstacles'],
     };
     assets.catSpriteSheet.onload = () => { assets.catSpriteLoaded = true; };
-    assets.catSpriteSheet.src = '/sprites/cat-run-jump.png';
+    assets.catSpriteSheet.src = catUrl;
     return assets;
 }

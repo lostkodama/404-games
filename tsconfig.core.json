@@ -5,17 +5,17 @@
     "types": []
   },
   "include": [
-    "src/game/types.ts",
-    "src/game/constants.ts",
-    "src/game/gameState.ts",
-    "src/game/updateGame.ts",
-    "src/game/input/input.ts",
-    "src/game/player/**/*.ts",
-    "src/game/obstacles/**/*.ts",
-    "src/game/collision/**/*.ts",
-    "src/game/scoring/**/*.ts",
-    "src/game/difficulty/**/*.ts",
-    "src/game/environment/**/*.ts"
+    "src/game/runner/types.ts",
+    "src/game/runner/constants.ts",
+    "src/game/runner/gameState.ts",
+    "src/game/runner/updateGame.ts",
+    "src/game/runner/input/input.ts",
+    "src/game/runner/player/**/*.ts",
+    "src/game/runner/obstacles/**/*.ts",
+    "src/game/runner/collision/**/*.ts",
+    "src/game/runner/scoring/**/*.ts",
+    "src/game/runner/difficulty/**/*.ts",
+    "src/game/runner/environment/**/*.ts"
   ],
   "exclude": ["src/**/*.test.ts"]
 }
